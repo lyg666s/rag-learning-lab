@@ -1,0 +1,1747 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAG 学习实验室 · 读 / 切 / 存 / 检</title>
+<style>
+:root{
+  --paper:#FDFDFA;
+  --paper-2:#F6F5F0;
+  --ink:#23262C;
+  --ink-soft:#5C6069;
+  --line:#E3E1D8;
+  --red:#C43D2B;
+  --red-deep:#A93222;
+  --red-wash:#FBEEEA;
+  --blue:#3A5BC7;      /* 稠密通道 */
+  --blue-wash:#EBEFFA;
+  --green:#1F7A68;     /* 稀疏通道 */
+  --green-wash:#E7F2EF;
+  --gold:#F5CE49;      /* 荧光笔 */
+  --serif:"Songti SC","Noto Serif SC","STSong","SimSun",serif;
+  --sans:-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --kai:"Kaiti SC","STKaiti","KaiTi",var(--serif);
+  --mono:"SF Mono",ui-monospace,Menlo,Consolas,"Courier New",monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.85}
+::selection{background:var(--gold)}
+a{color:var(--red-deep)}
+button{font-family:inherit}
+
+/* ---------- 顶部：导航即流程图 ---------- */
+.top{position:sticky;top:0;z-index:50;background:rgba(253,253,250,.94);backdrop-filter:blur(6px);border-bottom:1.5px solid var(--ink)}
+.top-in{max-width:1180px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--serif);font-weight:700;font-size:19px}
+.brand .seal-s{width:30px;height:30px;font-size:17px}
+.steps{display:flex;align-items:center;gap:2px;margin-left:auto;flex-wrap:wrap}
+.steps a{display:flex;align-items:center;gap:7px;text-decoration:none;color:var(--ink-soft);font-size:14px;padding:5px 11px;border-radius:99px;border:1.5px solid transparent;transition:.15s}
+.steps a b{font-family:var(--serif);font-size:15px;color:var(--ink)}
+.steps a:hover{border-color:var(--line)}
+.steps a.on{border-color:var(--red);color:var(--red-deep);background:var(--red-wash)}
+.steps .arr{color:var(--line);font-size:13px}
+
+/* 红印章 */
+.seal{display:inline-grid;place-items:center;width:44px;height:44px;background:var(--red);color:#fff;font-family:var(--serif);font-size:23px;font-weight:700;border-radius:9px;box-shadow:2px 2px 0 rgba(196,61,43,.22);flex:none}
+.seal-s{width:30px;height:30px;font-size:17px;border-radius:6px;box-shadow:1.5px 1.5px 0 rgba(196,61,43,.22)}
+
+/* ---------- 版心 ---------- */
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+
+/* ---------- Hero ---------- */
+.hero{padding:64px 0 44px;border-bottom:1px solid var(--line)}
+.hero h1{font-family:var(--serif);font-size:clamp(34px,5.2vw,54px);line-height:1.25;letter-spacing:.02em;font-weight:700}
+.hero h1 em{font-style:normal;background:linear-gradient(transparent 62%,var(--gold) 62%)}
+.hero .lead{margin-top:14px;font-size:17.5px;color:var(--ink-soft);max-width:46em}
+.hero .note-inline{margin-top:18px;max-width:46em}
+.flow{margin-top:34px;display:grid;gap:10px}
+.flow-row{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap}
+.flow-tag{writing-mode:vertical-rl;font-size:12px;letter-spacing:.35em;color:var(--ink-soft);border:1px solid var(--line);border-radius:8px;padding:8px 4px;background:var(--paper-2);flex:none}
+.flow-node{border:1.5px solid var(--ink);border-radius:10px;padding:8px 13px;background:#fff;min-width:86px;text-align:center;flex:none}
+.flow-node small{display:block;font-size:12px;color:var(--ink-soft);line-height:1.3}
+.flow-node b{font-family:var(--serif);font-size:16px}
+.flow-node.hot{background:var(--red-wash);border-color:var(--red)}
+.flow-node.hot b{color:var(--red-deep)}
+.flow-arr{display:grid;place-items:center;color:var(--ink-soft);font-size:15px;flex:none}
+.flow-store{border-style:dashed}
+
+/* ---------- 章节 ---------- */
+.chapter{padding:58px 0 46px;border-bottom:1px solid var(--line)}
+.ch-head{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+.ch-head h2{font-family:var(--serif);font-size:30px;font-weight:700}
+.ch-head .sub{color:var(--ink-soft);font-size:14.5px;margin-top:2px}
+.ch-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:40px;margin-top:22px}
+.ch-main{min-width:0}
+.prose p{margin:12px 0;max-width:44em}
+.prose strong{background:linear-gradient(transparent 60%,var(--gold) 60%)}
+.prose .term{font-weight:600}
+h3.blk{font-family:var(--serif);font-size:20px;margin:30px 0 10px;padding-left:12px;border-left:4px solid var(--red)}
+
+/* 红笔批注 */
+.note{font-family:var(--kai);color:var(--red-deep);font-size:16.5px;line-height:1.8}
+.note::before{content:"批 ";display:inline-block;font-size:12px;border:1.5px solid var(--red);border-radius:4px;padding:0 4px;line-height:1.5;margin-right:8px;transform:translateY(-2px)}
+.note b{color:var(--red)}
+.side .note{margin:0 0 20px;padding:12px 14px;background:var(--red-wash);border-radius:10px}
+.side{align-self:start;position:sticky;top:76px}
+.side .anchor{font-size:13px;color:var(--ink-soft);margin-bottom:18px;border-top:1.5px solid var(--ink);padding-top:10px}
+.side .anchor a{display:block;text-decoration:none;padding:3px 0;color:var(--ink-soft)}
+.side .anchor a:hover{color:var(--red-deep)}
+
+/* 验证卡 */
+.verify{margin-top:22px;border:1.5px dashed var(--green);border-radius:10px;padding:12px 16px;background:var(--green-wash);font-size:14.5px}
+.verify b{color:var(--green)}
+.verify code{font-family:var(--mono);font-size:12.5px;background:#fff;padding:1px 5px;border-radius:4px}
+
+/* ---------- 实验台 ---------- */
+.lab{margin-top:26px;border:1.5px solid var(--ink);border-radius:14px;background:#fff;overflow:hidden}
+.lab-head{display:flex;align-items:center;gap:10px;padding:11px 18px;background:var(--ink);color:#F3F1E9}
+.lab-head .lamp{width:9px;height:9px;border-radius:50%;background:var(--gold);flex:none}
+.lab-head b{font-family:var(--serif);font-size:16.5px;letter-spacing:.03em}
+.lab-head span{font-size:12.5px;color:#B9BDC7;margin-left:auto}
+.lab-body{padding:20px 18px}
+.lab .hint{font-size:13px;color:var(--ink-soft);margin-top:10px}
+.btn{border:1.5px solid var(--ink);background:#fff;color:var(--ink);border-radius:9px;padding:7px 16px;font-size:14.5px;cursor:pointer;transition:.13s}
+.btn:hover{background:var(--paper-2)}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--red);border-color:var(--red);color:#fff}
+.btn.primary:hover{background:var(--red-deep)}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.btn:focus-visible,a:focus-visible,input:focus-visible{outline:2.5px solid var(--blue);outline-offset:2px}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1.5px solid var(--line);background:var(--paper-2);border-radius:99px;padding:4px 13px;font-size:13.5px;cursor:pointer;transition:.13s}
+.chip:hover{border-color:var(--ink)}
+.chip.on{border-color:var(--red);background:var(--red-wash);color:var(--red-deep)}
+.stage-tag{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-soft)}
+.stage-tag i{font-style:normal;width:19px;height:19px;border-radius:50%;border:1.5px solid var(--ink-soft);display:grid;place-items:center;font-size:11.5px}
+.stage-tag.done i{background:var(--green);border-color:var(--green);color:#fff}
+.stage-tag.done{color:var(--green)}
+
+/* Demo1 传送带 */
+.belt{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:16px}
+.file-chip{border:1.5px solid var(--ink);border-radius:9px;background:#fff;padding:7px 12px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:.13s}
+.file-chip .ft{font-family:var(--mono);font-size:11px;color:var(--ink-soft);background:var(--paper-2);border-radius:4px;padding:1px 5px}
+.file-chip:hover{background:var(--paper-2)}
+.file-chip.sel{background:var(--gold);border-color:var(--ink);box-shadow:2.5px 2.5px 0 rgba(35,38,44,.25)}
+.file-chip.bad{border-style:dashed;color:var(--ink-soft)}
+.loader-view{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:4px}
+.loader-card{border:1.5px solid var(--line);border-radius:10px;padding:14px 16px;background:var(--paper-2)}
+.loader-card .lc-name{font-family:var(--mono);font-size:14px;font-weight:600}
+.loader-card .lc-desc{font-size:13px;color:var(--ink-soft);margin-top:3px}
+.extract{border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;background:#fff}
+.extract .ex-label{font-size:12px;color:var(--ink-soft);letter-spacing:.1em}
+.extract .ex-text{font-size:14px;margin-top:5px;max-height:120px;overflow:auto}
+.stamps{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.stamp{border:1.5px solid var(--red);color:var(--red-deep);border-radius:6px;padding:3px 9px;font-size:12px;font-family:var(--mono);background:#fff;transform:rotate(-1.2deg)}
+.stamp:nth-child(2n){transform:rotate(1deg)}
+.reject{border:1.5px dashed var(--red);color:var(--red-deep);border-radius:10px;padding:16px;text-align:center;font-family:var(--kai);font-size:16px;background:var(--red-wash)}
+
+/* Demo2 拆分台 */
+.doc-paper{border:1.5px solid var(--ink);border-radius:4px;background:#fff;padding:20px 22px;position:relative;box-shadow:3px 3px 0 rgba(35,38,44,.12)}
+.doc-title{font-family:var(--serif);font-weight:700;text-align:center;font-size:17px;border-bottom:1px solid var(--line);padding-bottom:9px;margin-bottom:14px}
+.parent-blk{border-left:4px solid var(--blue);border-radius:0 8px 8px 0;background:var(--blue-wash);padding:10px 12px;margin:10px 0}
+.parent-blk.p1{border-color:var(--green);background:var(--green-wash)}
+.parent-blk.p2{border-color:var(--gold);background:#FBF6DC}
+.parent-tag{font-size:11.5px;font-family:var(--mono);color:var(--ink-soft);display:block;margin-bottom:4px}
+.child-span{display:inline-block;background:#fff;border:1px solid var(--line);border-radius:6px;padding:2px 8px;margin:3px 4px 3px 0;font-size:13.5px;line-height:1.7;transition:.15s}
+.child-span:hover{border-color:var(--ink)}
+.child-span.hit{border-color:var(--red);background:var(--red-wash);box-shadow:0 0 0 2px rgba(196,61,43,.25)}
+.parent-blk.lift{box-shadow:0 0 0 2.5px var(--red);transform:translateY(-3px);transition:.25s}
+.score-badge{font-size:11px;color:var(--red-deep);font-family:var(--mono)}
+.retrieve-out{margin-top:14px;border-top:1.5px dashed var(--line);padding-top:13px}
+.retrieve-out .to-label{font-size:13px;color:var(--ink-soft)}
+.retrieve-out .to-parent{font-size:14.5px;background:#fff;border:1.5px solid var(--red);border-radius:8px;padding:10px 13px;margin-top:7px}
+
+/* Demo3 向量 */
+.vec-io{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.vec-io input{flex:1;min-width:230px;border:1.5px solid var(--ink);border-radius:9px;padding:8px 13px;font-size:15px;font-family:inherit;background:#fff}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px}
+.vec-panel{border:1.5px solid var(--line);border-radius:10px;padding:13px 15px}
+.vec-panel h4{font-size:14.5px;display:flex;align-items:center;gap:8px}
+.vec-panel h4 .dot{width:10px;height:10px;border-radius:3px;flex:none}
+.vec-panel.dense h4 .dot{background:var(--blue)}
+.vec-panel.sparse h4 .dot{background:var(--green)}
+.vec-panel .vp-sub{font-size:12.5px;color:var(--ink-soft);margin:2px 0 10px}
+.strip{display:flex;gap:2px;align-items:flex-end;height:52px}
+.strip i{flex:1;background:var(--paper-2);border-radius:1.5px;min-height:3px;transition:height .4s}
+.vec-panel.dense .strip i.f{background:var(--blue)}
+.vec-panel.sparse .strip i.f{background:var(--green)}
+.sim-rows{margin-top:18px;border:1.5px solid var(--line);border-radius:10px;overflow:hidden}
+.sim-head,.sim-row{display:grid;grid-template-columns:1.2fr .8fr .8fr .9fr;gap:8px;padding:8px 14px;align-items:center;font-size:13.5px}
+.sim-head{background:var(--ink);color:#F3F1E9;font-size:12.5px}
+.sim-row{border-top:1px solid var(--line);background:#fff}
+.sim-row.best{background:#FFF8D6}
+.sim-row .bar{height:8px;border-radius:99px;background:var(--paper-2);position:relative;overflow:hidden}
+.sim-row .bar i{position:absolute;inset:0 auto 0 0;border-radius:99px;transition:width .4s}
+.sim-row .bar.dense i{background:var(--blue)}
+.sim-row .bar.sparse i{background:var(--green)}
+.sim-row .bar.fuse i{background:var(--red)}
+.milvus-row{margin-top:18px;border:1.5px solid var(--ink);border-radius:10px;overflow:auto}
+.milvus-row table{border-collapse:collapse;width:100%;font-size:12px;min-width:820px}
+.milvus-row th{background:var(--paper-2);font-family:var(--mono);font-weight:600;text-align:left;padding:7px 10px;border-bottom:1.5px solid var(--ink);white-space:nowrap}
+.milvus-row td{padding:9px 10px;border-right:1px solid var(--line);vertical-align:middle;font-family:var(--mono);font-size:11.5px;white-space:nowrap}
+.milvus-row td .mini{display:inline-flex;gap:1px;align-items:flex-end;height:16px}
+.milvus-row td .mini i{width:2.5px;background:var(--paper-2);border-radius:1px}
+.milvus-row td.dense-mini .mini i.f{background:var(--blue)}
+.milvus-row td.sparse-mini .mini i.f{background:var(--green)}
+.milvus-row td .nullv{color:var(--ink-soft)}
+
+/* Demo4 检索台 */
+.search-io{display:flex;gap:10px;flex-wrap:wrap}
+.search-io input{flex:1;min-width:240px;border:1.5px solid var(--ink);border-radius:9px;padding:9px 13px;font-size:15px;font-family:inherit}
+.lanes{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px}
+.lane{border:1.5px solid var(--line);border-radius:10px;padding:12px 14px}
+.lane h4{font-size:14.5px;display:flex;align-items:center;gap:8px}
+.lane.lane-d h4 .dot,.lane.lane-d .lane-kw{background:var(--blue)}
+.lane.lane-s h4 .dot,.lane.lane-s .lane-kw{background:var(--green)}
+.lane h4 .dot{width:10px;height:10px;border-radius:3px;flex:none}
+.lane .lane-sub{font-size:12.5px;color:var(--ink-soft);margin:3px 0 10px}
+.lane-kw{display:inline-block;color:#fff;border-radius:4px;padding:0 6px;font-size:11px;font-family:var(--mono);margin-left:6px}
+.r-item{border:1px solid var(--line);border-radius:8px;background:#fff;padding:8px 11px;margin-top:8px;font-size:13px;position:relative;transition:.25s}
+.r-item .ri-score{font-family:var(--mono);font-size:11px;color:var(--ink-soft);float:right}
+.r-item .bar{height:6px;border-radius:99px;background:var(--paper-2);margin-top:6px;overflow:hidden}
+.r-item .bar i{display:block;height:100%;border-radius:99px;transition:width .5s}
+.lane-d .bar i{background:var(--blue)}
+.lane-s .bar i{background:var(--green)}
+.r-item.win{border-color:var(--red);box-shadow:0 0 0 2px rgba(196,61,43,.18)}
+.r-item .ri-tag{font-size:10.5px;font-family:var(--mono);color:var(--red-deep);border:1px solid var(--red);border-radius:4px;padding:0 4px;margin-left:6px}
+.merge-out{margin-top:18px}
+.wctl{display:flex;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap;font-size:13.5px}
+.wctl input[type=range]{width:190px;accent-color:var(--red)}
+.wctl .wv{font-family:var(--mono);background:var(--paper-2);border-radius:5px;padding:1px 8px}
+.fused-list{margin-top:8px}
+.f-item{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:8px;background:#fff;padding:9px 12px;margin-top:8px;font-size:13.5px;transition:.25s}
+.f-item .fo-score{font-family:var(--mono);font-size:12px;flex:none;width:46px;text-align:right;color:var(--ink-soft);padding-top:2px}
+.f-item .fo-body{min-width:0;flex:1}
+.f-item .fo-meta{font-size:11.5px;color:var(--ink-soft)}
+.f-item.win{border-color:var(--red);box-shadow:0 0 0 2px rgba(196,61,43,.18)}
+.f-item .to-llm{font-size:11px;background:var(--red);color:#fff;border-radius:4px;padding:1px 7px;margin-left:8px;white-space:nowrap}
+.rerank-note{font-size:13px;color:var(--ink-soft);margin-top:8px}
+
+/* ---------- 代码块 ---------- */
+.codebox{margin:14px 0;border:1.5px solid var(--ink);border-radius:11px;overflow:hidden;background:#FBFAF6}
+.codebox .cb-head{display:flex;align-items:center;gap:9px;padding:8px 14px;border-bottom:1.5px solid var(--line);background:var(--paper-2);font-size:12.5px;color:var(--ink-soft)}
+.codebox .cb-head .cb-file{font-family:var(--mono);color:var(--ink)}
+.codebox .cb-copy{margin-left:auto;border:1px solid var(--line);background:#fff;border-radius:6px;font-size:12px;padding:2px 10px;cursor:pointer}
+.codebox .cb-copy:hover{border-color:var(--ink)}
+.codebox pre{padding:14px 16px;overflow:auto;font-family:var(--mono);font-size:12.8px;line-height:1.72;max-height:520px}
+details.codebox pre{max-height:none}
+details.codebox .cb-head{cursor:pointer;user-select:none}
+details.codebox .cb-head::after{content:"展开 / 收起";margin-left:8px;color:var(--red-deep)}
+details[open].codebox .cb-head::after{content:"收起"}
+/* python 语法色 */
+.tk-c{color:#8B9098;font-style:italic}
+.tk-s{color:#9A5B2E}
+.tk-k{color:#B0352A;font-weight:600}
+.tk-n{color:#7C5CBF}
+.tk-f{color:#1F5FA8;font-weight:600}
+.tk-d{color:#7C5CBF}
+
+/* ---------- 表格 / 附录 ---------- */
+table.info{width:100%;border-collapse:collapse;font-size:14px;margin:12px 0}
+table.info th{font-family:var(--mono);font-size:12.5px;text-align:left;background:var(--paper-2);border-bottom:1.5px solid var(--ink);padding:8px 11px}
+table.info td{border-bottom:1px solid var(--line);padding:8px 11px;vertical-align:top}
+table.info td code{font-family:var(--mono);font-size:12.5px;background:var(--paper-2);padding:1px 6px;border-radius:4px;white-space:nowrap}
+.faq details{border:1.5px solid var(--line);border-radius:10px;background:#fff;margin-top:10px;overflow:hidden}
+.faq summary{cursor:pointer;padding:11px 16px;font-weight:600;font-size:15px;list-style:none;display:flex;gap:10px;align-items:center}
+.faq summary::before{content:"问";font-size:12px;color:#fff;background:var(--red);border-radius:4px;padding:1px 6px;font-family:var(--serif);flex:none}
+.faq summary::-webkit-details-marker{display:none}
+.faq .faq-a{padding:2px 16px 14px 44px;font-size:14.5px;color:var(--ink);max-width:44em}
+footer{padding:36px 0 60px;color:var(--ink-soft);font-size:13.5px}
+footer .note{margin-top:8px}
+
+/* ---------- 响应式 ---------- */
+@media (max-width:960px){
+  .ch-grid{grid-template-columns:1fr}
+  .side{position:static;display:flex;gap:10px;flex-wrap:wrap}
+  .side .anchor{display:none}
+  .side .note{flex:1;min-width:240px;margin:0}
+  .duo,.lanes,.loader-view{grid-template-columns:1fr}
+  .hero{padding:44px 0 36px}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{transition:none!important;animation:none!important}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ 顶部导航 ============ -->
+<header class="top">
+  <div class="top-in">
+    <div class="brand"><span class="seal seal-s">R</span>RAG 学习实验室</div>
+    <nav class="steps" id="nav">
+      <a href="#ch-read"><b>读</b>加载</a><span class="arr">→</span>
+      <a href="#ch-split"><b>切</b>父子块</a><span class="arr">→</span>
+      <a href="#ch-store"><b>存</b>向量化</a><span class="arr">→</span>
+      <a href="#ch-search"><b>检</b>混合检索</a><span class="arr">→</span>
+      <a href="#ch-code"><b>码</b>全套代码</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ============ Hero ============ -->
+<section class="hero">
+  <h1>大模型的<em>开卷考试</em>，<br>是从一场「翻书」开始的。</h1>
+  <p class="lead">大模型的知识停在它「毕业」那天，你的教材、讲义、题库它一页都没读过。RAG（检索增强生成）的做法很像开卷考试：先从资料里翻到最相关的那几页，再照着作答。这门课讲的是「书」怎么准备、「翻书」怎么翻 —— 也就是向量数据库里的<b>存储</b>与<b>检索</b>。</p>
+  <p class="note note-inline">一句话大白话：RAG = 先查资料，再答题。下面的「读 → 切 → 存」是把书搬进图书馆（离线建库），「检」是考试时按问题去书架上翻书（在线问答）。</p>
+
+  <div class="flow" aria-label="整体流程">
+    <div class="flow-row">
+      <span class="flow-tag">离线建库</span>
+      <div class="flow-node"><small>Word / PDF / PPT / 图片</small><b>教材文档</b></div>
+      <span class="flow-arr">→</span>
+      <a class="flow-node hot" href="#ch-read" style="text-decoration:none;color:inherit"><small>统一读成文本 + 元数据</small><b>① 读</b></a>
+      <span class="flow-arr">→</span>
+      <a class="flow-node hot" href="#ch-split" style="text-decoration:none;color:inherit"><small>父块保上下文，子块利检索</small><b>② 切</b></a>
+      <span class="flow-arr">→</span>
+      <a class="flow-node hot" href="#ch-store" style="text-decoration:none;color:inherit"><small>BGE-M3 出稠密 + 稀疏两种向量</small><b>③ 存</b></a>
+      <span class="flow-arr">→</span>
+      <div class="flow-node flow-store"><small>8 个字段 + 双索引</small><b>Milvus</b></div>
+    </div>
+    <div class="flow-row">
+      <span class="flow-tag">在线问答</span>
+      <div class="flow-node"><small>「如何保养车辆？」</small><b>用户提问</b></div>
+      <span class="flow-arr">→</span>
+      <a class="flow-node hot" href="#ch-search" style="text-decoration:none;color:inherit"><small>双向量两路查 + 融合 + 重排</small><b>④ 检</b></a>
+      <span class="flow-arr">→</span>
+      <div class="flow-node"><small>Top-M 个父块塞进提示词</small><b>大模型作答</b></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 第 1 步 读 ============ -->
+<section class="chapter" id="ch-read">
+  <div class="ch-head">
+    <span class="seal">读</span>
+    <div><h2>文档加载</h2><div class="sub">把各种格式的教材，统一誊抄成「馆藏卡片」</div></div>
+  </div>
+  <div class="ch-grid">
+    <div class="ch-main prose">
+      <p><span class="term">这一步在干嘛：</span>按文件扩展名挑选对应的加载器（Loader），把 txt / pdf / docx / ppt / 图片 / md 全部读成统一的 <code>Document</code> 对象 —— 一段正文 + 一组元数据。</p>
+      <p><span class="term">为什么要这一步：</span>向量数据库不认识「PDF」也不认识「PPT」，它只收纯文本。不管原始资料长什么样，进库前必须先誊抄成标准格式。</p>
+
+      <h3 class="blk">大白话：图书馆收书</h3>
+      <p>图书馆收书时，不管你送来的是精装书、活页夹还是一叠照片，管理员都会先誊抄成统一格式的<b>馆藏卡片</b>：正文一份，标签若干。这里的四个标签（元数据）是：</p>
+      <table class="info">
+        <tr><th>元数据</th><th>大白话</th></tr>
+        <tr><td><code>source</code></td><td>这本书属于哪个书架 —— 从目录名截取（<code>ai_data</code> → <code>ai</code>，即「人工智能」学科），后面可以只查某个学科</td></tr>
+        <tr><td><code>file_path</code></td><td>原件放在哪里，答错了好溯源</td></tr>
+        <tr><td><code>file_type</code></td><td>原件是什么材质，决定它当初用哪把「刀」来切</td></tr>
+        <tr><td><code>timestamp</code></td><td>什么时候入的库，方便知道资料新旧</td></tr>
+      </table>
+      <p>最容易踩的坑：扫描版 PDF 和照片<b>没有文字层</b>，普通加载器读出来是空的。所以这套代码里 pdf / docx / ppt / 图片全部走 <code>OCR</code> 系加载器 —— 先「看图识字」，再交出文本。</p>
+
+      <h3 class="blk">实验台 · 收书窗口</h3>
+      <div class="lab">
+        <div class="lab-head"><span class="lamp"></span><b>把文件交给加载器</b><span>点一个文件，看它被谁接走、贴上什么标签</span></div>
+        <div class="lab-body">
+          <div class="belt" id="d1-belt"></div>
+          <div id="d1-view"><p class="hint">↑ 从上面挑一个文件试试。选「素材.zip」能看到不支持时系统怎么处理。</p></div>
+          <p class="hint">注意每份「卡片」右下角都盖了 4 个章 —— 这就是 metadata，第 3 步存进 Milvus 时它们各占一列。</p>
+        </div>
+      </div>
+
+      <h3 class="blk">核心代码</h3>
+      <div class="codebox">
+        <div class="cb-head"><span class="cb-file">core/document_processor.py</span>加载器映射 + 目录扫描<button class="cb-copy" type="button">复制</button></div>
+        <pre><code class="lang-py"># 定义不同文档加载需要使用的加载器：扩展名 -> 加载器
+document_loaders = {
+    ".txt": TextLoader,                # 纯文本直接读
+    ".pdf": OCRPDFLoader,              # PDF（含扫描件）：先 OCR 看图识字
+    ".docx": OCRDOCLoader,             # Word
+    ".ppt": OCRPPTLoader,              # PPT / PPTX
+    ".pptx": OCRPPTLoader,
+    ".jpg": OCRIMGLoader,              # 图片
+    ".png": OCRIMGLoader,
+    ".md": UnstructuredMarkdownLoader  # Markdown
+}
+
+def load_documents_from_directory(directory_path: str) -> [Document]:
+    documents = []
+    # 从目录名截取学科（来源），如 "ai_data" -> "ai"
+    source = os.path.basename(directory_path).split('_')[0]
+    # os.walk 递归遍历目录及其子目录下的所有文件
+    for root, _, files in os.walk(directory_path):
+        for filename in files:
+            file_path = os.path.join(root, filename)
+            file_type = os.path.splitext(filename)[1]
+            # 不支持的类型：记日志后跳过，不让一个怪文件毁掉整批
+            if file_type not in document_loaders:
+                logger.info(f"{file_path}文件不支持加载")
+                continue
+            loader_class = document_loaders[file_type]
+            # txt 需要显式指定编码，其余交给各加载器自己处理
+            if file_type == ".txt":
+                loader = loader_class(file_path, encoding="utf-8")
+            else:
+                loader = loader_class(file_path)
+            docs = loader.load()
+            for doc in docs:  # 给每个文档贴 4 个元数据标签
+                doc.metadata["source"] = source                    # 学科来源
+                doc.metadata["file_path"] = file_path              # 原始路径
+                doc.metadata["file_type"] = file_type              # 文件类型
+                doc.metadata["timestamp"] = datetime.now().isoformat()  # 时间戳
+            documents.extend(docs)
+    return documents</code></pre>
+      </div>
+
+      <details class="codebox">
+        <div class="cb-head"><span class="cb-file">运行验证</span><code>python document_processor.py</code> 会打印出什么</div>
+        <pre><code class="lang-py">if __name__ == '__main__':
+    documents = load_documents_from_directory("D:/workspace/bk/edu_rag/data/ai_data")
+    for document in documents:
+        print(document)
+# 预期输出：每个 Document 一行，
+# page_content 是提取出的正文文本，
+# metadata 里带 source / file_path / file_type / timestamp 四个键。</code></pre>
+      </details>
+
+      <div class="verify"><b>怎么验证这一步跑通了：</b>运行后 <code>print(len(documents))</code> 大于 0，且随便抽一个 <code>doc.metadata</code> 能看到 4 个标签。若某个 PDF 打印出来是空字符串 —— 八成是扫描件，确认它走的是 OCR 加载器。</div>
+    </div>
+
+    <aside class="side">
+      <div class="note">把「读」想成<b>图书馆收书</b>：什么材质的书都收，但收进来一律誊抄成统一格式的卡片 —— 正文一份 + 标签四个。扫描件、照片这种「没有字的书」，得先让 OCR 帮忙念一遍。</div>
+      <div class="note">元数据不是装饰。<code>source</code> 是后面检索时「只在某个学科书架里找」的依据；<code>timestamp</code> 用来分辨资料新旧。</div>
+      <div class="anchor">
+        本页目录
+        <a href="#ch-read">① 读 · 文档加载</a>
+        <a href="#ch-split">② 切 · 父子块拆分</a>
+        <a href="#ch-store">③ 存 · 向量化入库</a>
+        <a href="#ch-search">④ 检 · 混合检索</a>
+        <a href="#ch-code">⑤ 全套代码</a>
+        <a href="#appendix">附录 · 参数与快问快答</a>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ 第 2 步 切 ============ -->
+<section class="chapter" id="ch-split">
+  <div class="ch-head">
+    <span class="seal">切</span>
+    <div><h2>父子块拆分</h2><div class="sub">用小块找，用大块答</div></div>
+  </div>
+  <div class="ch-grid">
+    <div class="ch-main prose">
+      <p><span class="term">这一步在干嘛：</span>把每个文档先按粗粒度切成<b>父块</b>（比如一页、一章），再把每个父块按细粒度切成<b>子块</b>（比如一段）。子块会随身携带两个「寻亲信息」：<code>parent_id</code> 和 <code>parent_content</code>。</p>
+      <p><span class="term">为什么要这一步：</span>向量模型对<b>小文本</b>更敏感。一整章塞进去，主题一杂，向量就成了「平均模糊」的意思，查不准；但只把一小段丢给大模型，上下文又不够，答不好。于是用两层：子块小而聚焦，负责「被搜到」；父块大而完整，负责「被读懂」。</p>
+
+      <h3 class="blk">大白话：背课文</h3>
+      <p>一整本书直接背是背不下来的。先把书按<b>章</b>背成大段（父块），每章再按<b>知识点</b>拆成小段（子块）。考试时：用小段去「对题」（准），对上之后背整章来组织答案（全）。查字典也一个道理 —— 查的是词条（子块），理解要看整段释义（父块）。</p>
+
+      <h3 class="blk">两把刀，各切各的</h3>
+      <p>整套拆分其实只有两条<b>互相独立</b>的流水线，在入口处按文件类型分流，互不掺和：</p>
+      <table class="info">
+        <tr><th style="width:7em"></th><th>刀法一 · 通用刀</th><th>刀法二 · 标题刀</th></tr>
+        <tr><td><b>伺候谁</b></td><td>txt / pdf / docx / ppt / 图片 OCR —— 日常主力</td><td>只伺候 <code>.md</code> 文件</td></tr>
+        <tr><td><b>用什么刀</b></td><td><code>ChineseRecursiveTextSplitter</code></td><td><code>MarkdownTextSplitter</code></td></tr>
+        <tr><td><b>怎么下刀</b></td><td>先试段落 → 再试句子 → 兜底按字符，认长度不认结构</td><td>认 <code>#</code> 标题层级，尽量切在章节边界</td></tr>
+        <tr><td><b>切完之后</b></td><td colspan="2">流程完全相同：父块粗切 → 子块细切 → 子块带「寻亲三件套」</td></tr>
+      </table>
+      <p>无论哪种刀法，<code>CHUNK_OVERLAP</code>（重叠区）都在起同样的作用：相邻两块带一点公共内容，防止一句话被拦腰切断 —— 谁也不缺胳膊少腿。</p>
+
+      <h3 class="blk">实验台 · 拆分台</h3>
+      <div class="lab">
+        <div class="lab-head"><span class="lamp"></span><b>一份文档的两次刀法</b><span>先粗切父块，再细切子块，最后模拟一次提问</span></div>
+        <div class="lab-body">
+          <div class="btn-row">
+            <button class="btn primary" id="d2-parent" type="button">① 切父块</button>
+            <button class="btn" id="d2-child" type="button" disabled>② 切子块</button>
+            <span class="stage-tag" id="d2-st1"><i>1</i>父块</span>
+            <span class="stage-tag" id="d2-st2"><i>2</i>子块</span>
+            <span class="stage-tag" id="d2-st3"><i>3</i>命中</span>
+          </div>
+          <div id="d2-doc" style="margin-top:16px">
+            <div class="doc-paper"><p class="hint">这是一份从「读」那步产出的 Document（ artificial intelligence 学科的讲义）。点上面的按钮开始切。</p></div>
+          </div>
+          <div id="d2-query" style="display:none;margin-top:16px">
+            <div class="search-io">
+              <input id="d2-input" type="text" placeholder="模拟用户提问，例如：什么是大语言模型？">
+              <button class="btn primary" id="d2-ask" type="button">提问</button>
+            </div>
+            <div class="chips" style="margin-top:10px" id="d2-chips"></div>
+            <div id="d2-out"></div>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="blk">核心代码 · 分流版（md 与其他格式彻底分开）</h3>
+      <div class="codebox">
+        <div class="cb-head"><span class="cb-file">core/document_processor.py</span>入口分流 + 两个刀法函数 + 一个共用流程<button class="cb-copy" type="button">复制</button></div>
+        <pre><code class="lang-py">conf = Config()  # 读入 PARENT_CHUNK_SIZE / CHILD_CHUNK_SIZE / CHUNK_OVERLAP
+
+def process_documents(documents: [Document]) -> [Document]:
+    # 入口分流：md 走刀法二，其余全走刀法一 —— 两条线各自独立
+    chunks = []
+    for i, doc in enumerate(documents):
+        if doc.metadata["file_type"] == ".md":
+            chunks.extend(split_markdown(doc, i))   # ── 刀法二 · 标题刀
+        else:
+            chunks.extend(split_normal(doc, i))     # ── 刀法一 · 通用刀
+    return chunks
+
+# ══════ 刀法一 · 通用刀：txt / pdf / docx / ppt / 图片 OCR ══════
+# 按段落 → 句子 → 字符的顺序递归下刀，认长度不认结构
+def split_normal(doc, doc_index):
+    return _split_parent_then_child(doc, doc_index,
+        parent_splitter=ChineseRecursiveTextSplitter(
+            chunk_size=conf.PARENT_CHUNK_SIZE, chunk_overlap=conf.CHUNK_OVERLAP),
+        child_splitter=ChineseRecursiveTextSplitter(
+            chunk_size=conf.CHILD_CHUNK_SIZE, chunk_overlap=conf.CHUNK_OVERLAP))
+
+# ══════ 刀法二 · 标题刀：只伺候 Markdown ══════
+# 认 # 标题层级，尽量切在章节边界，不会把两章缝在一块
+def split_markdown(doc, doc_index):
+    return _split_parent_then_child(doc, doc_index,
+        parent_splitter=MarkdownTextSplitter(
+            chunk_size=conf.PARENT_CHUNK_SIZE, chunk_overlap=conf.CHUNK_OVERLAP),
+        child_splitter=MarkdownTextSplitter(
+            chunk_size=conf.CHILD_CHUNK_SIZE, chunk_overlap=conf.CHUNK_OVERLAP))
+
+# ══════ 两种刀法共用的「先父后子」两步流程 ══════
+def _split_parent_then_child(doc, doc_index, parent_splitter, child_splitter):
+    chunks = []
+    # 第一步：粗切父块
+    for j, parent_doc in enumerate(parent_splitter.split_documents([doc])):
+        parent_doc_id = f"doc_{doc_index}_parent_{j}"
+        # 第二步：细切子块
+        for k, child_doc in enumerate(child_splitter.split_documents([parent_doc])):
+            # 子块带三件套：自己的 id、父块 id、父块全文
+            child_doc.metadata["id"] = f"{parent_doc_id}_child_{k}"
+            child_doc.metadata["parent_id"] = parent_doc_id
+            child_doc.metadata["parent_content"] = parent_doc.page_content
+            chunks.append(child_doc)
+    return chunks  # 父块不单独入库，它搭在子块的行李里</code></pre>
+      </div>
+
+      <details class="codebox">
+        <div class="cb-head"><span class="cb-file">core/document_processor.py</span>教程原版对照（合成一个函数，三元表达式现场选刀）</div>
+        <pre><code class="lang-py">def process_documents(documents: [Document]) -> [Document]:
+    chunks = []  # 最终只保存子块
+    # 两把刀都先备好，走哪条线临时挑
+    parent_splitter = ChineseRecursiveTextSplitter(
+        chunk_size=conf.PARENT_CHUNK_SIZE, chunk_overlap=conf.CHUNK_OVERLAP)
+    child_splitter = ChineseRecursiveTextSplitter(
+        chunk_size=conf.CHILD_CHUNK_SIZE, chunk_overlap=conf.CHUNK_OVERLAP)
+    md_parent_splitter = MarkdownTextSplitter(
+        chunk_size=conf.PARENT_CHUNK_SIZE, chunk_overlap=conf.CHUNK_OVERLAP)
+    md_child_splitter = MarkdownTextSplitter(
+        chunk_size=conf.CHILD_CHUNK_SIZE, chunk_overlap=conf.CHUNK_OVERLAP)
+
+    for i, doc in enumerate(documents):
+        # md 用 Markdown 切分器，其余用中文递归切分器
+        is_md = doc.metadata["file_type"] == ".md"
+        parent_splitter_to_use = md_parent_splitter if is_md else parent_splitter
+        child_splitter_to_use = md_child_splitter if is_md else child_splitter
+
+        # 粗切父块 -> 细切子块 -> 子块带三件套，流程同上
+        parent_docs = parent_splitter_to_use.split_documents([doc])
+        for j, parent_doc in enumerate(parent_docs):
+            parent_doc_id = f"doc_{i}_parent_{j}"
+            child_docs = child_splitter_to_use.split_documents([parent_doc])
+            for k, child_doc in enumerate(child_docs):
+                child_doc.metadata["id"] = f"{parent_doc_id}_child_{k}"
+                child_doc.metadata["parent_id"] = parent_doc_id
+                child_doc.metadata["parent_content"] = parent_doc.page_content
+                chunks.append(child_doc)
+
+    return chunks  # 注意：父块不单独入库，它搭在子块的行李里</code></pre>
+      </details>
+
+      <div class="verify"><b>怎么验证这一步跑通了：</b>运行后打印 <code>chunks</code>，检查三件事：① 子块数量明显多于文档数；② 每个 <code>chunk.metadata["parent_id"]</code> 形如 <code>doc_0_parent_1</code>；③ 同一父块切出的子块，<code>parent_content</code> 完全一致。再对比 <code>PARENT_CHUNK_SIZE</code> 与 <code>CHILD_CHUNK_SIZE</code>，父块平均长度应明显更大。</div>
+    </div>
+
+    <aside class="side">
+      <div class="note">记住八个字：<b>用小的找，用大的答</b>。子块像书的目录词条，负责被精准搜到；父块像整页正文，负责给大模型足够的上下文。</div>
+      <div class="note">为什么小块查得更准？一段话主题越单一，它的语义向量就越「立场鲜明」。一大章什么都讲，向量就被平均成一锅粥，跟哪个问题都有点像、又都不像。</div>
+      <div class="anchor">
+        本页目录
+        <a href="#ch-read">① 读 · 文档加载</a>
+        <a href="#ch-split">② 切 · 父子块拆分</a>
+        <a href="#ch-store">③ 存 · 向量化入库</a>
+        <a href="#ch-search">④ 检 · 混合检索</a>
+        <a href="#ch-code">⑤ 全套代码</a>
+        <a href="#appendix">附录 · 参数与快问快答</a>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ 第 3 步 存 ============ -->
+<section class="chapter" id="ch-store">
+  <div class="ch-head">
+    <span class="seal">存</span>
+    <div><h2>向量化与入库</h2><div class="sub">BGE-M3 一鱼两吃：稠密 + 稀疏，写进 Milvus</div></div>
+  </div>
+  <div class="ch-grid">
+    <div class="ch-main prose">
+      <p><span class="term">这一步在干嘛：</span>拿本地部署的 <code>BGE-M3</code> 嵌入模型，把每个<b>子块</b>的文本同时转成两种向量 —— <b>稠密向量</b>（1024 维的浮点数组）和<b>稀疏向量</b>（词 → 权重的字典），连同元数据一起写进 Milvus。</p>
+      <p><span class="term">为什么要两种向量：</span>它们是两套互补的「找书」本事。</p>
+
+      <h3 class="blk">大白话：印象派 vs 检字法</h3>
+      <p><b>稠密向量</b>：把整句话的「意思」压缩成 1024 个小数。意思近的句子，这串数字就排得近。查询「如何保养车辆」，它能找到一条词都不重合的「汽车维护技巧」—— 靠的是<b>印象</b>，认意思不认字面。</p>
+      <p><b>稀疏向量</b>：先分词，每个词在词表里有个「座位号」，命中就记权重，其余上万个座位全是 0 —— 这就是「稀疏」二字的来历。查询里出现「保养」「车辆」，它就精确翻出含这两个词的段落 —— 靠的是<b>检字</b>，认字面不认意思。</p>
+      <p>教学场景术语多且容不得似是而非（「有理数」和「无理数」意思差十万八千里，稠密向量却觉得挺像），所以两路一起上，互相兜底。</p>
+
+      <h3 class="blk">实验台 · 双向量透视仪</h3>
+      <div class="lab">
+        <div class="lab-head"><span class="lamp"></span><b>一句话，两种向量化</b><span>演示数据为教学模拟，真实数值由 BGE-M3 计算</span></div>
+        <div class="lab-body">
+          <div class="vec-io">
+            <input id="d3-input" type="text" value="如何保养车辆" placeholder="输入一句话，回车向量化">
+            <button class="btn primary" id="d3-go" type="button">向量化</button>
+          </div>
+          <div class="chips" style="margin-top:10px" id="d3-chips"></div>
+          <div class="duo">
+            <div class="vec-panel dense">
+              <h4><span class="dot"></span>稠密向量 <span class="lane-kw" style="background:var(--blue)">dense · 1024 维 → 压缩展示 48 格</span></h4>
+              <div class="vp-sub">整句语义压成一条「印象指纹」，意思近 → 条纹长得像</div>
+              <div class="strip" id="d3-dense"></div>
+            </div>
+            <div class="vec-panel sparse">
+              <h4><span class="dot"></span>稀疏向量 <span class="lane-kw" style="background:var(--green)">sparse · 词表座位号 → 权重</span></h4>
+              <div class="vp-sub">只有分出来的词有值，其余座位全为 0（条形码既视感）</div>
+              <div class="strip" id="d3-sparse"></div>
+              <div id="d3-toks" style="margin-top:10px;font-size:12px;color:var(--ink-soft);font-family:var(--mono)"></div>
+            </div>
+          </div>
+          <div class="sim-rows" id="d3-sim"></div>
+          <p class="hint">看这张表的两个名场面：「汽车维护技巧」稠密高分 / 稀疏 0.00 —— 意思近、字面远，这是稠密的价值；「如何保养皮肤」稀疏高分 / 稠密 0.00 —— 两个词撞上了、意思差远了，这是稀疏的盲区。最后一列加权融合，就是第 4 步 WeightedRanker 的雏形。</p>
+          <div class="milvus-row" id="d3-milvus"></div>
+          <p class="hint">上面就是这句子块最终在 Milvus 里占的一行：两种向量各占一列，父块信息随行李携带，MD5 当主键。</p>
+        </div>
+      </div>
+
+      <h3 class="blk">Milvus 表结构与索引</h3>
+      <table class="info">
+        <tr><th>字段</th><th>类型</th><th>大白话</th></tr>
+        <tr><td><code>id</code></td><td>VARCHAR 主键</td><td>子块内容的 MD5 —— 内容不变，重复入库也只算一条</td></tr>
+        <tr><td><code>text</code></td><td>VARCHAR</td><td>子块正文，命中的原始凭据</td></tr>
+        <tr><td><code>dense_vector</code></td><td>FLOAT_VECTOR(1024)</td><td>印象指纹，管语义</td></tr>
+        <tr><td><code>sparse_vector</code></td><td>SPARSE_FLOAT_VECTOR</td><td>条形码，管字面</td></tr>
+        <tr><td><code>parent_id</code> / <code>parent_content</code></td><td>VARCHAR</td><td>寻亲信息：命中后去哪领「完整上下文」</td></tr>
+        <tr><td><code>source</code> / <code>timestamp</code></td><td>VARCHAR</td><td>「读」那步盖的章，这里落了户</td></tr>
+      </table>
+      <p>两个索引也是两套找法：<code>IVF_FLAT</code> 先把 1024 维向量聚成 128 个「书架」（nlist），查询只翻最像的几个书架（nprobe=10），拿空间换时间；<code>SPARSE_INVERTED_INDEX</code> 就是倒排目录 —— 词条 → 哪些行含有它，跟书本最后的索引页一个原理。</p>
+
+      <h3 class="blk">核心代码</h3>
+      <div class="codebox">
+        <div class="cb-head"><span class="cb-file">core/vector_store.py</span>建表：8 个字段 + 两个索引<button class="cb-copy" type="button">复制</button></div>
+        <pre><code class="lang-py">class VectorStore:
+    def __init__(self):
+        # 1) 本地加载 BGE-M3：cuda -> mps -> cpu 自动择优
+        import torch
+        if torch.cuda.is_available():
+            device = 'cuda'
+        elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+            device = 'mps'
+        else:
+            device = 'cpu'
+        bge_m3_model_path = "D:/workspace/bk/edu_rag/models/bge-m3"
+        self.embedding = BGEM3EmbeddingFunction(
+            model_name_or_path=bge_m3_model_path, use_fp16=True, device=device)
+
+        # 2) 连接 Milvus
+        self.client = MilvusClient(
+            uri=f"http://{conf.MILVUS_HOST}:{conf.MILVUS_PORT}",
+            db_name=conf.MILVUS_DATABASE_NAME)
+
+        # 3) 表不存在才建，避免重复建表报错
+        if not self.client.has_collection(conf.MILVUS_COLLECTION_NAME):
+            schema = self.client.create_schema(auto_id=False, enable_dynamic_field=True)
+            schema.add_field("id", DataType.VARCHAR, is_primary=True, max_length=100)
+            schema.add_field("text", DataType.VARCHAR, max_length=65535)
+            schema.add_field("dense_vector", DataType.FLOAT_VECTOR,
+                             dim=self.embedding.dim['dense'])   # 1024
+            schema.add_field("sparse_vector", DataType.SPARSE_FLOAT_VECTOR)
+            schema.add_field("parent_id", DataType.VARCHAR, max_length=100)
+            schema.add_field("parent_content", DataType.VARCHAR, max_length=65535)
+            schema.add_field("source", DataType.VARCHAR, max_length=50)
+            schema.add_field("timestamp", DataType.VARCHAR, max_length=50)
+
+            index_params = self.client.prepare_index_params()
+            # 稠密：IVF_FLAT，内积度量，128 个聚类书架
+            index_params.add_index(field_name="dense_vector", index_name="dense_index",
+                index_type="IVF_FLAT", metric_type="IP", params={"nlist": 128})
+            # 稀疏：倒排索引，构建时丢弃 20% 权重最小的词条换速度
+            index_params.add_index(field_name="sparse_vector", index_name="sparse_index",
+                index_type="SPARSE_INVERTED_INDEX", metric_type="IP",
+                params={"drop_ratio_build": 0.2})
+            self.client.create_collection(
+                collection_name=conf.MILVUS_COLLECTION_NAME,
+                schema=schema, index_params=index_params)</code></pre>
+      </div>
+
+      <div class="codebox">
+        <div class="cb-head"><span class="cb-file">core/vector_store.py</span>入库：向量化 + MD5 主键 + upsert<button class="cb-copy" type="button">复制</button></div>
+        <pre><code class="lang-py">    def add_documents(self, documents: [Document]):
+        texts = [doc.page_content for doc in documents]
+        # 一次性批量向量化：BGE-M3 同时返回 dense 和 sparse
+        embeddings = self.embedding(texts)
+
+        data = []
+        for i, doc in enumerate(documents):
+            # 内容 MD5 作主键：同样内容重复入库 -> 覆盖而不是重复
+            text_hash = hashlib.md5(doc.page_content.encode("utf-8")).hexdigest()
+            # 稀疏向量在返回值里是压缩行格式，摊开成 {座位号: 权重}
+            sparce_vector = {}
+            row = embeddings['sparse'][[i]]
+            for index, value in zip(row.indices, row.data):
+                sparce_vector[index] = value
+            data.append({
+                "id": text_hash,
+                "text": doc.page_content,
+                "dense_vector": embeddings['dense'][i],
+                "sparse_vector": sparce_vector,
+                "parent_id": doc.metadata["parent_id"],
+                "parent_content": doc.metadata["parent_content"],
+                "source": doc.metadata.get("source", "unknown"),
+                "timestamp": doc.metadata.get("timestamp", "unknown"),
+            })
+        if data:
+            # upsert = 有则覆盖，无则插入；重建知识库时可放心重跑
+            self.client.upsert(collection_name=conf.MILVUS_COLLECTION_NAME, data=data)
+            logger.info(f"已插入或更新 {len(data)} 个文档")</code></pre>
+      </div>
+
+      <div class="verify"><b>怎么验证这一步跑通了：</b>① 先跑 BGE-M3 小样：两三句话过 <code>self.embedding()</code>，打印 <code>dim['dense']</code> 应为 1024，稠密向量是浮点数组、稀疏向量只有少数位置非零；② 入库后用 Milvus 的可视化工具（Attu）或 <code>client.query()</code> 数一下行数是否等于子块数；③ 把同一段文档重复入库一次，行数<b>不</b>变 —— 这就是 MD5 主键 + upsert 在起作用。</div>
+    </div>
+
+    <aside class="side">
+      <div class="note">稠密向量像<b>印象派画家</b>：看整体神韵，管它用词是否相同 —— 「如何保养车辆」和「汽车维护技巧」在它眼里是近亲。</div>
+      <div class="note">稀疏向量像<b>字典检字法</b>：逐字对号入座，一个词算一个词的分。教育场景术语精确，它的价值尤其大。</div>
+      <div class="note">MD5 主键 + upsert 的组合拳，让「重建知识库」变成可以随便重跑的操作 —— 内容没变就不产生重复数据。</div>
+      <div class="anchor">
+        本页目录
+        <a href="#ch-read">① 读 · 文档加载</a>
+        <a href="#ch-split">② 切 · 父子块拆分</a>
+        <a href="#ch-store">③ 存 · 向量化入库</a>
+        <a href="#ch-search">④ 检 · 混合检索</a>
+        <a href="#ch-code">⑤ 全套代码</a>
+        <a href="#appendix">附录 · 参数与快问快答</a>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ 第 4 步 检 ============ -->
+<section class="chapter" id="ch-search">
+  <div class="ch-head">
+    <span class="seal">检</span>
+    <div><h2>混合检索与重排</h2><div class="sub">两路召回 → 融合去重 → 精排取 Top-M</div></div>
+  </div>
+  <div class="ch-grid">
+    <div class="ch-main prose">
+      <p><span class="term">这一步在干嘛：</span>用户的问题先用同一个 BGE-M3 转出稠密 + 稀疏两种向量；两路各查回 k 条，用 <code>WeightedRanker</code> 加权融合；按父块去重后，交给 <code>bge-reranker-large</code> 精排，只留 Top-M 个父块送进大模型。</p>
+      <p><span class="term">为什么要这么绕：</span>因为「快」和「准」是一对矛盾。向量检索是「各查各的、内积合分」，快，但粗；CrossEncoder 重排要把「问题 + 段落」成对塞进模型逐字精读，准，但慢。所以流程设计成<b>漏斗</b>：先用便宜的方法把几万条筛到几十条，再让昂贵的精读只看这几十条。</p>
+
+      <h3 class="blk">大白话：三关选拔</h3>
+      <p><b>第一关 · 两路初筛</b>：印象派（稠密）和检字法（稀疏）各自报出最像的 k 条候选。 <b>第二关 · 加权合议</b>：<code>WeightedRanker(0.7, 1.0)</code> 把两路分数加权求和 —— 注意顺序要跟 <code>reqs=[sparse_request, dense_request]</code> 对齐，0.7 给稀疏、1.0 给稠密，即<b>更信语义，但字面命中也加分</b>；写反了效果全变。同一个父块的多个子块都命中时，只留一份父块，免得大模型读到复读机内容。<b>第三关 · 面试精排</b>：reranker 把「问题和段落放在一起精读」打分 —— 它不像向量检索那样「各算各的再比」，而是看两者<b>放在一起是否真的匹配</b>，所以更能排除「词都对上、答非所问」的凑数选手。</p>
+
+      <h3 class="blk">实验台 · 混合检索模拟台</h3>
+      <div class="lab">
+        <div class="lab-head"><span class="lamp"></span><b>8 条知识 · 一次提问 · 三关选拔</b><span>分数为教学模拟，重点看流程与排序变化</span></div>
+        <div class="lab-body">
+          <div class="search-io">
+            <input id="d4-input" type="text" value="如何保养车辆" placeholder="输入问题，例如：如何保养车辆">
+            <button class="btn primary" id="d4-go" type="button">① 两路检索</button>
+            <button class="btn" id="d4-rerank" type="button" disabled>③ 重排 Top-M</button>
+          </div>
+          <div class="chips" style="margin-top:10px" id="d4-chips"></div>
+
+          <div id="d4-lanes" style="display:none">
+            <div class="lanes">
+              <div class="lane lane-s">
+                <h4><span class="dot"></span>稀疏通道 <span class="lane-kw">sparse · 认字面</span></h4>
+                <div class="lane-sub">问题分词后与各子块的关键词比对 —— 词对上才有分</div>
+                <div id="d4-lane-s"></div>
+              </div>
+              <div class="lane lane-d">
+                <h4><span class="dot"></span>稠密通道 <span class="lane-kw">dense · 认意思</span></h4>
+                <div class="lane-sub">问题与各子块的语义指纹比相似度 —— 意思近就高分</div>
+                <div id="d4-lane-d"></div>
+              </div>
+            </div>
+            <div class="wctl">
+              <span>WeightedRanker 权重</span>
+              <span class="wv">稀疏 <b id="d4-ws">0.7</b></span>
+              <input type="range" id="d4-slider" min="0" max="1" step="0.1" value="0.7" aria-label="稀疏通道权重">
+              <span class="wv">稠密 <b>1.0</b>（固定，与代码一致）</span>
+            </div>
+            <div class="merge-out" id="d4-merge"></div>
+            <div id="d4-final"></div>
+            <p class="rerank-note" id="d4-note">试试拖动权重滑块：调到 0，纯语义检索 —— 「上海水上交通堵了」也能被「如何保养车辆」这样的问题模糊沾边；调到 1，纯关键词检索 —— 一词不中就出局。</p>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="blk">核心代码</h3>
+      <div class="codebox">
+        <div class="cb-head"><span class="cb-file">core/vector_store.py</span>混合检索 + 父块去重 + 重排<button class="cb-copy" type="button">复制</button></div>
+        <pre><code class="lang-py">    def hybrid_search_with_reranker(self, query, k=conf.RETRIEVAL_K, source_filter=None):
+        # 1) 问题同样做双向量化 —— 必须用和入库时同一个模型
+        embeddings = self.embedding([query])
+        dense_query_vector = embeddings['dense'][0]
+        sparse_query_vector = {}
+        row = embeddings["sparse"][[0]]
+        for idx, val in zip(row.indices, row.data):
+            sparse_query_vector[idx] = val
+
+        # 2) 组装两路搜索请求（可带 source 过滤：只在某个学科书架里找）
+        filter_expr = f"source == '{source_filter}'" if source_filter else ""
+        sparse_request = AnnSearchRequest(
+            data=[sparse_query_vector], anns_field="sparse_vector",
+            param={"metric_type": "IP", "params": {}},
+            limit=k, expr=filter_expr)
+        dense_request = AnnSearchRequest(
+            data=[dense_query_vector], anns_field="dense_vector",
+            param={"metric_type": "IP", "params": {"nprobe": 10}},
+            limit=k, expr=filter_expr)
+
+        # 3) 加权融合：reqs 顺序是 [稀疏, 稠密]，
+        #    所以 0.7 给稀疏、1.0 给稠密 —— 更信语义，字面命中也加分
+        ranker = WeightedRanker(0.7, 1.0)
+        results = self.client.hybrid_search(
+            collection_name=conf.MILVUS_COLLECTION_NAME,
+            reqs=[sparse_request, dense_request],
+            ranker=ranker, limit=k,
+            output_fields=["text", "parent_id", "parent_content",
+                           "source", "timestamp"])[0]
+
+        # 4) 命中的是子块，按父块内容去重，换回完整父块
+        chunks = [self.__doc_from_hit(hit['entity']) for hit in results]
+        parent_docs = self.__get_unique_parent_docs(chunks)
+        if len(parent_docs) < 2:
+            return parent_docs
+
+        # 5) 少量候选交给 CrossEncoder 精读打分，取 Top-M
+        pairs = [[query, doc.page_content] for doc in parent_docs]
+        scores = self.reranker.predict(pairs)
+        ranked = [doc for _, doc in sorted(zip(scores, parent_docs), reverse=True)]
+        return ranked[:conf.CANDIDATE_M]
+
+    def __doc_from_hit(self, hit):
+        return Document(page_content=hit.get("text"), metadata={
+            "parent_id": hit.get("parent_id"),
+            "parent_content": hit.get("parent_content"),
+            "source": hit.get("source"),
+            "timestamp": hit.get("timestamp")})
+
+    def __get_unique_parent_docs(self, chunks):
+        parent_contents, unique_docs = set(), []
+        for chunk in chunks:
+            parent_content = chunk.metadata.get("parent_content")
+            if parent_content and parent_content not in parent_contents:
+                unique_docs.append(Document(page_content=parent_content,
+                                            metadata=chunk.metadata))
+                parent_contents.add(parent_content)
+        return unique_docs</code></pre>
+      </div>
+
+      <details class="codebox">
+        <div class="cb-head"><span class="cb-file">reranker 模型自检</span>验证 bge-reranker-large 加载正常</div>
+        <pre><code class="lang-py">from sentence_transformers import CrossEncoder
+model1 = CrossEncoder(model_name=".../models/bge-reranker-large")
+pairs = [['what is panda?', "what is panda?"],
+         ['what is panda?', 'hi'],
+         ['what is panda?', 'The giant panda ']]
+print(model1.predict(pairs))
+# 预期输出类似：[0.9995  0.0036  0.3362]
+# 越高越相关：同句 >> 无关闲聊，部分相关居中 —— 模型手感正常</code></pre>
+      </details>
+
+      <div class="verify"><b>怎么验证这一步跑通了：</b>用一个「明显相关 + 一个明显无关」的问题各查一次：相关问题应召回对应父块且排在前面；无关问题的得分应显著偏低。再故意查一个知识库里没有的内容，观察返回结果的分数 —— 理解「检索不是回答，只是找资料」：垃圾进垃圾出，资料不对，后面大模型写得再顺也是错的。</div>
+    </div>
+
+    <aside class="side">
+      <div class="note">整个检索是个<b>漏斗</b>：几万条 → 两路各 k 条 → 合并去重 → 精排 Top-M。便宜的筛子干粗活，昂贵的精读只看决赛选手。</div>
+      <div class="note"><code>WeightedRanker(0.7, 1.0)</code> 的两个数<b>跟 reqs 的顺序一一对应</b>，不是「稠密 0.7」。这是初学最容易看漏的一行。</div>
+      <div class="note">命中子块、返回父块 —— 所以第 2 步里子块才要背着 <code>parent_content</code> 一起入库。前面埋的伏笔，在这里兑现。</div>
+      <div class="anchor">
+        本页目录
+        <a href="#ch-read">① 读 · 文档加载</a>
+        <a href="#ch-split">② 切 · 父子块拆分</a>
+        <a href="#ch-store">③ 存 · 向量化入库</a>
+        <a href="#ch-search">④ 检 · 混合检索</a>
+        <a href="#ch-code">⑤ 全套代码</a>
+        <a href="#appendix">附录 · 参数与快问快答</a>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ 全套代码 ============ -->
+<section class="chapter" id="ch-code">
+  <div class="ch-head">
+    <span class="seal" style="background:var(--ink);box-shadow:2px 2px 0 rgba(35,38,44,.2)">码</span>
+    <div><h2>全套流程代码</h2><div class="sub">从一份 PDF 到一次检索 —— 四个步骤拼成一份能跑的参考实现</div></div>
+  </div>
+  <div class="ch-grid">
+    <div class="ch-main prose">
+      <p><span class="term">怎么用这份代码：</span>按阶段 0 → 5 从上往下读，正好是数据流动的顺序：目录里的文件 → 贴好标签的 Document → 带寻亲三件套的子块 → Milvus 里一行行记录 → 一次提问换回的父块。每个阶段标题都注明对应的教学章节，忘了原理随时点回去。</p>
+      <div class="flow" style="margin-top:18px">
+        <div class="flow-row">
+          <div class="flow-node"><small>① 读</small><b>Document×N</b></div>
+          <span class="flow-arr">→</span>
+          <div class="flow-node"><small>② 切</small><b>子块×M（带行李）</b></div>
+          <span class="flow-arr">→</span>
+          <div class="flow-node"><small>③ 存</small><b>Milvus 行</b></div>
+          <span class="flow-arr">→</span>
+          <div class="flow-node"><small>④ 检</small><b>父块 Top-M</b></div>
+          <span class="flow-arr">→</span>
+          <span class="flow-arr">→</span>
+          <div class="flow-node"><small>下一课</small><b>大模型作答</b></div>
+        </div>
+      </div>
+
+      <h3 class="blk">阶段 0 · 项目结构与依赖</h3>
+      <div class="codebox">
+        <div class="cb-head"><span class="cb-file">项目结构</span>五个文件各管一段<button class="cb-copy" type="button">复制</button></div>
+        <pre><code>edu_rag/
+├── base/
+│   ├── config.py             # 所有旋钮集中在这
+│   └── logger.py             # 三行日志
+├── rag_qa/
+│   ├── edu_document_loaders/
+│   │   └── edu_pdfloader.py  # 读：VLM 看图说话版 PDF 加载器
+│   └── edu_text_spliter/     # 中文递归切分器（教程工具包提供）
+├── core/
+│   ├── document_processor.py # ① 读 + ② 切
+│   └── vector_store.py       # ③ 存 + ④ 检
+├── models/
+│   ├── bge-m3/               # 嵌入模型（稠密+稀疏双修）
+│   └── bge-reranker-large/   # 重排模型
+├── data/ai_data/             # 教材放这里；目录名 = 学科
+└── main.py                   # 一键跑通</code></pre>
+      </div>
+      <div class="codebox">
+        <div class="cb-head"><span class="cb-file">安装依赖</span>bash<button class="cb-copy" type="button">复制</button></div>
+        <pre><code># 建议 python 3.10+
+pip install langchain-community langchain-core langchain-text-splitters \
+            pymilvus milvus-model FlagEmbedding sentence-transformers torch \
+            PyMuPDF openai
+# 另需要：① models/ 下放好 bge-m3 与 bge-reranker-large（魔搭可下载）
+#        ② 一个跑着的 Milvus 服务（docker 启动即可）
+#        ③ 带图 PDF 走 VLM：本地起多模态服务（如 Ollama 跑 qwen2.5vl）；
+#          暂时没有就把 describe_image 换成教程的 OCR 实现</code></pre>
+      </div>
+
+      <h3 class="blk">阶段 1 · 配置：base/config.py（<a href="#appendix">参数含义见附录</a>）</h3>
+      <div class="codebox">
+        <div class="cb-head"><span class="cb-file">base/config.py</span>所有旋钮集中一个类<button class="cb-copy" type="button">复制</button></div>
+        <pre><code class="lang-py">import os
+
+class Config:
+    # ── 模型路径 ──
+    BGE_M3_MODEL_PATH = "models/bge-m3"
+    RERANKER_MODEL_PATH = "models/bge-reranker-large"
+    # ── Milvus 连接 ──
+    MILVUS_HOST = "127.0.0.1"
+    MILVUS_PORT = 19530
+    MILVUS_DATABASE_NAME = "default"
+    MILVUS_COLLECTION_NAME = "edu_chunks"
+    # ── 切块旋钮 ──
+    PARENT_CHUNK_SIZE = 512   # 父块上限：给大模型看的上下文量
+    CHILD_CHUNK_SIZE = 128    # 子块上限：越小越准，太小丢语境
+    CHUNK_OVERLAP = 32        # 相邻块重叠：防止句子被拦腰切断
+    # ── 检索旋钮 ──
+    RETRIEVAL_K = 10          # 两路各召回多少条（漏斗的口）
+    CANDIDATE_M = 3           # 重排后留给大模型几段</code></pre>
+      </div>
+
+      <h3 class="blk">阶段 2 · 读：VLM 版 PDF 加载器（<a href="#ch-read">原理 → 第①章</a>）</h3>
+      <div class="codebox">
+        <div class="cb-head"><span class="cb-file">rag_qa/edu_document_loaders/edu_pdfloader.py</span>文字层直抽 + 图片请多模态模型看图说话<button class="cb-copy" type="button">复制</button></div>
+        <pre><code class="lang-py">import fitz  # PyMuPDF（pip install PyMuPDF，别装成老的 fitz 包）
+from langchain_core.documents import Document
+from langchain_community.document_loaders.base import BaseLoader
+
+class OCRPDFLoader(BaseLoader):
+    """逐页处理：有文字层就抽文本；有图请 VLM 看图说话，解说词钉回原文"""
+    def __init__(self, file_path: str):
+        self.file_path = file_path
+
+    def load(self) -> [Document]:
+        docs, pdf = [], fitz.open(self.file_path)
+        for page in pdf:
+            text = page.get_text()                  # ① 有文字层：免费、一字不差
+            for i, img in enumerate(page.get_images(full=True)):  # ② 有图才花钱
+                pix = fitz.Pixmap(pdf, img[0])      # 抠出图片对象
+                if pix.n - pix.alpha > 3:           # CMYK 等转 RGB
+                    pix = fitz.Pixmap(fitz.csRGB, pix)
+                caption = describe_image(pix.tobytes("png"))   # ③ 看图说话
+                text += f"\n【图{i + 1}：{caption}】"           # ④ 钉回原文
+            # 扫描版整页一张图：get_text() 为空，整页由 VLM 转述
+            docs.append(Document(page_content=text,
+                                 metadata={"page": page.number + 1}))
+        pdf.close()
+        return docs
+
+def describe_image(img_bytes) -> str:
+    """看图说话：任何 OpenAI 兼容接口都行（本地 Ollama / vLLM 或云端）。
+    换模型只改 base_url 和 model，「读」之后的管线一行不改"""
+    import base64
+    from openai import OpenAI
+    client = OpenAI(base_url="http://127.0.0.1:11434/v1", api_key="ollama")
+    b64 = base64.b64encode(img_bytes).decode()
+    resp = client.chat.completions.create(
+        model="qwen2.5vl:7b",
+        messages=[{"role": "user", "content": [
+            {"type": "text", "text":
+             "用中文详细描述这张图：图表请转写关键数据，"
+             "流程图请列出步骤，公式请输出 LaTeX。"},
+            {"type": "image_url",
+             "image_url": {"url": f"data:image/png;base64,{b64}"}},
+        ]}])
+    return resp.choices[0].message.content.strip()</code></pre>
+      </div>
+
+      <h3 class="blk">阶段 3 · 读 + 切：document_processor.py（<a href="#ch-read">原理 → 第①章</a> / <a href="#ch-split">第②章</a>）</h3>
+      <div class="codebox">
+        <div class="cb-head"><span class="cb-file">core/document_processor.py</span>加载 → 贴章 → 分流切分，一个文件讲完整条「进库流水线」<button class="cb-copy" type="button">复制</button></div>
+        <pre><code class="lang-py">import os
+from datetime import datetime
+from langchain_core.documents import Document
+from langchain_community.document_loaders import TextLoader, UnstructuredMarkdownLoader
+from langchain_text_splitters import MarkdownTextSplitter
+from base.config import Config
+from base.logger import logger
+from rag_qa.edu_document_loaders.edu_pdfloader import OCRPDFLoader
+# docx/ppt/图片 的加载器同样来自教程工具包（没有的话删掉这三行 import 和 map 里对应条目）
+from rag_qa.edu_document_loaders.edu_docloader import OCRDOCLoader
+from rag_qa.edu_document_loaders.edu_pptloader import OCRPPTLoader
+from rag_qa.edu_document_loaders.edu_imgloader import OCRIMGLoader
+from rag_qa.edu_text_spliter.edu_chinese_recursive_text_splitter import ChineseRecursiveTextSplitter
+
+conf = Config()
+
+# ── 扩展名 → 加载器。docx/ppt/图片同理走教程的 OCR 系加载器，原则一致：
+#    非文字内容一律先变成文字，再交给后面的管线 ──
+document_loaders = {
+    ".txt": TextLoader,
+    ".pdf": OCRPDFLoader,
+    ".docx": OCRDOCLoader,   # 教程提供；没有该模块就先删掉这几行和 map 里的对应条目
+    ".ppt": OCRPPTLoader,
+    ".pptx": OCRPPTLoader,
+    ".jpg": OCRIMGLoader,
+    ".png": OCRIMGLoader,
+    ".md": UnstructuredMarkdownLoader,
+}
+
+def load_documents_from_directory(directory_path: str) -> [Document]:
+    """① 读：目录扫一遍，所有格式誊抄成统一格式的 Document + 4 个元数据章"""
+    documents = []
+    source = os.path.basename(directory_path).split('_')[0]  # ai_data -> ai
+    for root, _, files in os.walk(directory_path):
+        for filename in files:
+            file_path = os.path.join(root, filename)
+            file_type = os.path.splitext(filename)[1]
+            if file_type not in document_loaders:      # 不支持的类型：记日志后跳过
+                logger.info(f"{file_path}文件不支持加载")
+                continue
+            loader_class = document_loaders[file_type]
+            # txt 显式指定 utf-8，其余交给加载器自己处理
+            if file_type == ".txt":
+                loader = loader_class(file_path, encoding="utf-8")
+            else:
+                loader = loader_class(file_path)
+            for doc in loader.load():
+                doc.metadata["source"] = source
+                doc.metadata["file_path"] = file_path
+                doc.metadata["file_type"] = file_type
+                doc.metadata["timestamp"] = datetime.now().isoformat()
+                documents.append(doc)
+    return documents
+
+def process_documents(documents: [Document]) -> [Document]:
+    """② 切：入口分流 —— md 走标题刀，其余走通用刀，两条线互不掺和"""
+    chunks = []
+    for i, doc in enumerate(documents):
+        splitter = split_markdown if doc.metadata["file_type"] == ".md" else split_normal
+        chunks.extend(splitter(doc, i))
+    return chunks
+
+def split_normal(doc, doc_index):
+    """刀法一 · 通用刀：段落 → 句子 → 字符递归下刀，认长度不认结构"""
+    return _split_parent_then_child(doc, doc_index,
+        parent_splitter=ChineseRecursiveTextSplitter(
+            chunk_size=conf.PARENT_CHUNK_SIZE, chunk_overlap=conf.CHUNK_OVERLAP),
+        child_splitter=ChineseRecursiveTextSplitter(
+            chunk_size=conf.CHILD_CHUNK_SIZE, chunk_overlap=conf.CHUNK_OVERLAP))
+
+def split_markdown(doc, doc_index):
+    """刀法二 · 标题刀：认 # 标题层级，尽量切在章节边界"""
+    return _split_parent_then_child(doc, doc_index,
+        parent_splitter=MarkdownTextSplitter(
+            chunk_size=conf.PARENT_CHUNK_SIZE, chunk_overlap=conf.CHUNK_OVERLAP),
+        child_splitter=MarkdownTextSplitter(
+            chunk_size=conf.CHILD_CHUNK_SIZE, chunk_overlap=conf.CHUNK_OVERLAP))
+
+def _split_parent_then_child(doc, doc_index, parent_splitter, child_splitter):
+    """两种刀法共用的「先父后子」：粗切父块 → 细切子块 → 子块带三件套"""
+    chunks = []
+    for j, parent_doc in enumerate(parent_splitter.split_documents([doc])):
+        parent_doc_id = f"doc_{doc_index}_parent_{j}"
+        for k, child_doc in enumerate(child_splitter.split_documents([parent_doc])):
+            child_doc.metadata["id"] = f"{parent_doc_id}_child_{k}"
+            child_doc.metadata["parent_id"] = parent_doc_id
+            child_doc.metadata["parent_content"] = parent_doc.page_content
+            chunks.append(child_doc)   # 父块不单独入库，搭在子块行李里
+    return chunks</code></pre>
+      </div>
+
+      <h3 class="blk">阶段 4 · 存 + 检：vector_store.py（<a href="#ch-store">原理 → 第③章</a> / <a href="#ch-search">第④章</a>）</h3>
+      <div class="codebox">
+        <div class="cb-head"><span class="cb-file">core/vector_store.py</span>建表、入库、混合检索、重排 —— 完整类<button class="cb-copy" type="button">复制</button></div>
+        <pre><code class="lang-py">import hashlib
+from langchain_core.documents import Document
+from milvus_model.hybrid import BGEM3EmbeddingFunction
+from pymilvus import MilvusClient, DataType, AnnSearchRequest, WeightedRanker
+from sentence_transformers import CrossEncoder
+from base.config import Config
+from base.logger import logger
+
+conf = Config()
+
+class VectorStore:
+    def __init__(self):
+        # 1) BGE-M3：一个模型同时管稠密和稀疏（cuda → mps → cpu 择优）
+        import torch
+        device = ('cuda' if torch.cuda.is_available()
+                  else 'mps' if hasattr(torch.backends, 'mps')
+                       and torch.backends.mps.is_available()
+                  else 'cpu')
+        self.embedding = BGEM3EmbeddingFunction(
+            model_name_or_path=conf.BGE_M3_MODEL_PATH,
+            use_fp16=True, device=device)
+
+        # 2) 连接 Milvus
+        self.client = MilvusClient(
+            uri=f"http://{conf.MILVUS_HOST}:{conf.MILVUS_PORT}",
+            db_name=conf.MILVUS_DATABASE_NAME)
+
+        # 3) 建表：8 个字段 + 两个索引（表已存在则跳过）
+        if not self.client.has_collection(conf.MILVUS_COLLECTION_NAME):
+            schema = self.client.create_schema(auto_id=False,
+                                               enable_dynamic_field=True)
+            schema.add_field("id", DataType.VARCHAR, is_primary=True, max_length=100)
+            schema.add_field("text", DataType.VARCHAR, max_length=65535)
+            schema.add_field("dense_vector", DataType.FLOAT_VECTOR,
+                             dim=self.embedding.dim['dense'])    # 1024 维
+            schema.add_field("sparse_vector", DataType.SPARSE_FLOAT_VECTOR)
+            schema.add_field("parent_id", DataType.VARCHAR, max_length=100)
+            schema.add_field("parent_content", DataType.VARCHAR, max_length=65535)
+            schema.add_field("source", DataType.VARCHAR, max_length=50)
+            schema.add_field("timestamp", DataType.VARCHAR, max_length=50)
+
+            index_params = self.client.prepare_index_params()
+            # 稠密：IVF_FLAT，128 个聚类「书架」，内积度量
+            index_params.add_index(field_name="dense_vector", index_name="dense_index",
+                index_type="IVF_FLAT", metric_type="IP", params={"nlist": 128})
+            # 稀疏：倒排目录，构建时丢弃 20% 权重最小的词条换速度
+            index_params.add_index(field_name="sparse_vector", index_name="sparse_index",
+                index_type="SPARSE_INVERTED_INDEX", metric_type="IP",
+                params={"drop_ratio_build": 0.2})
+            self.client.create_collection(conf.MILVUS_COLLECTION_NAME,
+                                          schema=schema, index_params=index_params)
+            logger.info(f"已创建集合 {conf.MILVUS_COLLECTION_NAME}")
+
+        # 4) 重排模型：CrossEncoder，把（问题, 段落）成对精读打分
+        self.reranker = CrossEncoder(conf.RERANKER_MODEL_PATH)
+
+    def add_documents(self, documents: [Document]):
+        """③ 存：只有子块正文向量化；父块全文搭行李，不转向量"""
+        texts = [doc.page_content for doc in documents]
+        embeddings = self.embedding(texts)            # dense + sparse 一次全出
+        data = []
+        for i, doc in enumerate(documents):
+            # 内容 MD5 当主键：重复入库只覆盖，不产生重复数据
+            text_hash = hashlib.md5(doc.page_content.encode("utf-8")).hexdigest()
+            sparse_vector = {}   # 压缩行格式摊开成 {座位号: 权重}
+            row = embeddings['sparse'][[i]]
+            for index, value in zip(row.indices, row.data):
+                sparse_vector[index] = value
+            data.append({
+                "id": text_hash,
+                "text": doc.page_content,
+                "dense_vector": embeddings['dense'][i],
+                "sparse_vector": sparse_vector,
+                "parent_id": doc.metadata["parent_id"],
+                "parent_content": doc.metadata["parent_content"],
+                "source": doc.metadata.get("source", "unknown"),
+                "timestamp": doc.metadata.get("timestamp", "unknown"),
+            })
+        if data:
+            self.client.upsert(conf.MILVUS_COLLECTION_NAME, data=data)
+            logger.info(f"已插入或更新 {len(data)} 个文档")
+
+    def hybrid_search_with_reranker(self, query, k=conf.RETRIEVAL_K, source_filter=None):
+        """④ 检：双向量化 → 两路召回 → 加权融合 → 父块去重 → 精排 Top-M"""
+        # 1) 问题用同一个模型双向量化
+        embeddings = self.embedding([query])
+        dense_query_vector = embeddings['dense'][0]
+        sparse_query_vector = {}
+        row = embeddings["sparse"][[0]]
+        for idx, val in zip(row.indices, row.data):
+            sparse_query_vector[idx] = val
+
+        # 2) 组装两路搜索（可带 source 过滤：只在某学科书架里找）
+        filter_expr = f"source == '{source_filter}'" if source_filter else ""
+        sparse_request = AnnSearchRequest(
+            data=[sparse_query_vector], anns_field="sparse_vector",
+            param={"metric_type": "IP", "params": {}},
+            limit=k, expr=filter_expr)
+        dense_request = AnnSearchRequest(
+            data=[dense_query_vector], anns_field="dense_vector",
+            param={"metric_type": "IP", "params": {"nprobe": 10}},
+            limit=k, expr=filter_expr)
+
+        # 3) 加权融合。权重顺序 = reqs 顺序：0.7 给稀疏、1.0 给稠密
+        ranker = WeightedRanker(0.7, 1.0)
+        results = self.client.hybrid_search(
+            collection_name=conf.MILVUS_COLLECTION_NAME,
+            reqs=[sparse_request, dense_request], ranker=ranker, limit=k,
+            output_fields=["text", "parent_id", "parent_content",
+                           "source", "timestamp"])[0]
+
+        # 4) 命中的是子块，按父块去重换回完整父块
+        chunks = [self.__doc_from_hit(hit['entity']) for hit in results]
+        parent_docs = self.__get_unique_parent_docs(chunks)
+        if len(parent_docs) < 2:
+            return parent_docs
+
+        # 5) 少量候选交给 CrossEncoder 精读打分，取 Top-M
+        pairs = [[query, doc.page_content] for doc in parent_docs]
+        scores = self.reranker.predict(pairs)
+        ranked = [doc for _, doc in sorted(zip(scores, parent_docs), reverse=True)]
+        return ranked[:conf.CANDIDATE_M]
+
+    def __doc_from_hit(self, hit):
+        return Document(page_content=hit.get("text"), metadata={
+            "parent_id": hit.get("parent_id"),
+            "parent_content": hit.get("parent_content"),
+            "source": hit.get("source"),
+            "timestamp": hit.get("timestamp")})
+
+    def __get_unique_parent_docs(self, chunks):
+        parent_contents, unique_docs = set(), []
+        for chunk in chunks:
+            parent_content = chunk.metadata.get("parent_content")
+            if parent_content and parent_content not in parent_contents:
+                unique_docs.append(Document(page_content=parent_content,
+                                            metadata=chunk.metadata))
+                parent_contents.add(parent_content)
+        return unique_docs</code></pre>
+      </div>
+
+      <h3 class="blk">阶段 5 · main.py —— 一键跑通（对应全部四章）</h3>
+      <div class="codebox">
+        <div class="cb-head"><span class="cb-file">main.py</span>建库 + 提问，整条链路的入口<button class="cb-copy" type="button">复制</button></div>
+        <pre><code class="lang-py">from core.document_processor import load_documents_from_directory, process_documents
+from core.vector_store import VectorStore
+
+if __name__ == '__main__':
+    # ── 离线建库：读 → 切 → 存 ──
+    vs = VectorStore()                       # 加载 BGE-M3 / reranker，连 Milvus
+    documents = load_documents_from_directory("data/ai_data")   # ① 读
+    print(f"加载文档：{len(documents)} 个")
+    chunks = process_documents(documents)                       # ② 切
+    print(f"切出子块：{len(chunks)} 个（每个都带 parent_content 行李）")
+    vs.add_documents(chunks)                                    # ③ 存
+
+    # ── 在线检索：检 ──
+    question = "如何保养车辆"
+    parent_docs = vs.hybrid_search_with_reranker(question)      # ④ 检
+    print(f"\n🔍 问题：{question}")
+    for rank, doc in enumerate(parent_docs, 1):
+        print(f"\n第 {rank} 名父块（来源：{doc.metadata['source']}）")
+        print(doc.page_content[:120], "……")
+
+    # ⑤ 下一课「生成」：把 parent_docs 拼进提示词，交给大模型作答</code></pre>
+      </div>
+
+      <div class="verify"><b>端到端自检清单：</b>① Milvus 服务在线（Attu 能连上）→ ② <code>python main.py</code> 日志依次出现「加载文档 N 个 → 切出子块 M 个 → 已插入或更新 M 个文档」→ ③ Attu 里集合行数 = M，重复跑一次 main 行数不变（MD5 + upsert 幂等）→ ④ 换个不相关问题再查，返回的父块内容明显不相关且得分低 —— 说明排序是真本事，不是摆设。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 附录 ============ -->
+<section class="chapter" id="appendix" style="border-bottom:none">
+  <div class="ch-head">
+    <span class="seal" style="background:var(--ink);box-shadow:2px 2px 0 rgba(35,38,44,.2)">附</span>
+    <div><h2>参数表与快问快答</h2><div class="sub">跑起来之前，把旋钮都认一遍</div></div>
+  </div>
+  <div class="ch-grid" style="grid-template-columns:1fr">
+    <div class="ch-main">
+      <h3 class="blk" style="margin-top:6px">配置参数（base/config.py）</h3>
+      <table class="info">
+        <tr><th>参数</th><th>作用</th><th>大白话</th></tr>
+        <tr><td><code>PARENT_CHUNK_SIZE</code></td><td>父块最大长度</td><td>「章」切多大 —— 给大模型看的上下文量</td></tr>
+        <tr><td><code>CHILD_CHUNK_SIZE</code></td><td>子块最大长度</td><td>「知识点」切多大 —— 越小越准，太小则丢语境</td></tr>
+        <tr><td><code>CHUNK_OVERLAP</code></td><td>相邻块重叠长度</td><td>刀口留一点重合，防止一句话被切两半</td></tr>
+        <tr><td><code>RETRIEVAL_K</code></td><td>每路召回条数</td><td>初筛放进来多少人 —— 漏斗的口</td></tr>
+        <tr><td><code>CANDIDATE_M</code></td><td>重排保留条数</td><td>最终给大模型几段资料 —— 太多费 token 且引入噪音</td></tr>
+        <tr><td><code>MILVUS_HOST / PORT / DATABASE_NAME / COLLECTION_NAME</code></td><td>连接信息</td><td>图书馆的地址、楼层和书架名</td></tr>
+      </table>
+
+      <h3 class="blk">快问快答</h3>
+      <div class="faq">
+        <details>
+          <summary>为什么用子块查询，却把父块送给大模型？</summary>
+          <div class="faq-a">子块小、主题单一，语义向量「立场鲜明」，跟问题一比就分得出远近 —— 查得准。但只把一小段塞给大模型，它看到的上下文太少，容易答得干瘪或断章取义。父块大而完整，正好当答案的「课文原文」。所以：检索的精度靠子块，回答的质量靠父块。</div>
+        </details>
+        <details>
+          <summary>稠密、稀疏各留一路不行吗？为什么要两个都要？</summary>
+          <div class="faq-a">各有盲区：只用稠密，专业术语容易被似是而非的近义内容顶掉（「有理数」≈「无理数」）；只用稀疏，用户换个说法（「保养」说成「维护」）就查空。两路加权互补，一路失手另一路兜底 —— 这就是「混合检索」。</div>
+        </details>
+        <details>
+          <summary>向量检索已经打了分，为什么还要 reranker 再打一次？</summary>
+          <div class="faq-a">因为两路分数是「各算各的再合并」：问题和文档各自编码成向量后比内积，模型根本没见过它们放在一起的样子。CrossEncoder 把「问题， 段落」成对送进模型精读，直接判断「这段能不能回答这个问题」，准得多 —— 只是慢，所以只对去重后的少量父块用。</div>
+        </details>
+        <details>
+          <summary>MD5 当主键，两块内容一样会怎样？万一不同内容撞了 MD5 呢？</summary>
+          <div class="faq-a">内容一样 → id 一样 → upsert 覆盖，库里永远只有一条，这正是想要的幂等性。不同内容撞 MD5 的概率约 2^-128，工程上可以忽略；真要较真可以改成「MD5 + 文件路径」拼接。</div>
+        </details>
+        <details>
+          <summary>重排之后取的是 Top-M 个父块，然后呢？</summary>
+          <div class="faq-a">那就是下一课「生成」的入口了：把 Top-M 个父块作为参考资料模板化地拼进提示词（「请根据以下资料回答……」），连同用户问题一起发给大模型。本课的存储与检索，就是给这一步备料的。</div>
+        </details>
+        <details>
+          <summary>检索返回了资料，大模型就一定答对吗？</summary>
+          <div class="faq-a">不一定。检索只是「找到可能相关的原文」：资料找错了、或找对了但大模型没照着读，都会翻车。所以工程上要同时看两段指标 —— 检索准不准（命中率、排序质量）和生成好不好（是否忠于资料）。这也是为什么本课每个实验台都让你亲眼看分数和排序，而不是只看最终答案。</div>
+        </details>
+      </div>
+
+      <div class="verify" style="margin-top:26px"><b>整条链路的自检顺序：</b>① <code>print(len(documents))</code> 有货 → ② <code>print(len(chunks))</code> 且子块带 parent_id → ③ Milvus 行数对得上且重复入库不重复计数 → ④ 相关问题能召回正确父块、无关问题分数明显偏低。四关都过，存储与检索就算验收，可以进入「生成」环节。</div>
+    </div>
+  </div>
+</section>
+
+</main>
+<footer>
+  <div class="wrap">
+    RAG 学习实验室 · 由教程文档整理生成 · 演示数据为教学模拟，真实分数由 BGE-M3 / bge-reranker-large 计算
+    <div class="note">学完这页，你已经能回答：书是怎么进图书馆的（读切存），考试时是怎么翻书的（检）。下一站：让大模型照着翻到的书作答。</div>
+  </div>
+</footer>
+
+<script>
+/* ================= 工具 ================= */
+const $ = s => document.querySelector(s);
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function rngFactory(seed){
+  let s=0; for(const c of String(seed)) s=(s*31+c.charCodeAt(0))>>>0;
+  return ()=>{ s=(s*1664525+1013904223)>>>0; return s/4294967296; };
+}
+
+/* ================= Python 语法高亮 ================= */
+const PY_RE = new RegExp([
+  '(#[^\\n]*)',                                                    // 1 comment
+  '("""[\\s\\S]*?"""|\'\'\'[\\s\\S]*?\'\'\')',                     // 2 triple string
+  '([fFrRbB]{0,2}"(?:\\\\.|[^"\\\\\\n])*"|[fFrRbB]{0,2}\'(?:\\\\.|[^\'\\\\\\n])*\')', // 3 string
+  '\\b(def|class|return|for|in|if|elif|else|import|from|as|not|and|or|is|None|True|False|while|with|try|except|lambda|break|continue|pass)\\b', // 4 keyword
+  '\\b(\\d+(?:\\.\\d+)?)\\b',                                      // 5 number
+  '(?<=def )(\\w+)|(?<=class )(\\w+)',                             // 6/7 name
+].join('|'),'g');
+function highlightPy(code){
+  let out='', last=0, m;
+  PY_RE.lastIndex=0;
+  while((m=PY_RE.exec(code))){
+    out += esc(code.slice(last, m.index));
+    if(m[1]!=null)      out+='<span class="tk-c">'+esc(m[1])+'</span>';
+    else if(m[2]!=null) out+='<span class="tk-s">'+esc(m[2])+'</span>';
+    else if(m[3]!=null) out+='<span class="tk-s">'+esc(m[3])+'</span>';
+    else if(m[4]!=null) out+='<span class="tk-k">'+esc(m[4])+'</span>';
+    else if(m[5]!=null) out+='<span class="tk-n">'+esc(m[5])+'</span>';
+    else if(m[6]!=null) out+='<span class="tk-f">'+esc(m[6])+'</span>';
+    else if(m[7]!=null) out+='<span class="tk-f">'+esc(m[7])+'</span>';
+    last = m.index + m[0].length;
+  }
+  out += esc(code.slice(last));
+  return out;
+}
+document.querySelectorAll('pre code.lang-py').forEach(el=>{
+  el.innerHTML = highlightPy(el.textContent);
+});
+/* 复制按钮 */
+document.querySelectorAll('.codebox').forEach(box=>{
+  const btn=box.querySelector('.cb-copy'); if(!btn) return;
+  const pre=box.querySelector('pre');
+  btn.addEventListener('click',()=>{
+    navigator.clipboard.writeText(pre.innerText).then(()=>{
+      btn.textContent='已复制 ✓'; setTimeout(()=>btn.textContent='复制',1400);
+    }).catch(()=>{ btn.textContent='复制失败'; });
+  });
+});
+
+/* ================= 导航 scrollspy ================= */
+const secIds=['ch-read','ch-split','ch-store','ch-search','ch-code'];
+const navLinks={}; document.querySelectorAll('#nav a').forEach(a=>{
+  navLinks[a.getAttribute('href').slice(1)]=a;
+});
+const spy=new IntersectionObserver(es=>{
+  es.forEach(e=>{
+    if(e.isIntersecting){
+      Object.values(navLinks).forEach(a=>a.classList.remove('on'));
+      navLinks[e.target.id] && navLinks[e.target.id].classList.add('on');
+    }
+  });
+},{rootMargin:'-20% 0px -65% 0px'});
+secIds.forEach(id=>{const el=document.getElementById(id); el&&spy.observe(el);});
+
+/* ================= Demo1 收书窗口 ================= */
+const D1_FILES=[
+  {name:'人工智能导论.pdf',ft:'.pdf',loader:'OCRPDFLoader',desc:'扫描版没有文字层，先 OCR「看图识字」，再交出文本',text:'第 1 章 人工智能概述……1.1 什么是人工智能……'},
+  {name:'课程教案.docx',ft:'.docx',loader:'OCRDOCLoader',desc:'Word 里的标题、表格、批注统统抽成纯文本',text:'教学目标：理解 Transformer 的注意力机制……'},
+  {name:'课件汇总.pptx',ft:'.pptx',loader:'OCRPPTLoader',desc:'一页一页抽文本，幻灯片里的图也走 OCR',text:'Slide1: LLM 简史  Slide2: 预训练与微调……'},
+  {name:'手写笔记.png',ft:'.png',loader:'OCRIMGLoader',desc:'照片里没有文字层，全靠 OCR 认字',text:'注意事项：RAG = 检索 + 生成……'},
+  {name:'复习提纲.md',ft:'.md',loader:'UnstructuredMarkdownLoader',desc:'Markdown 保留结构，后面换「认识 # 号」的刀来切',text:'# 第 2 章 检索增强生成 ## 2.1 原理……'},
+  {name:'课后习题.txt',ft:'.txt',loader:'TextLoader',desc:'纯文本直接读，显式指定 utf-8 编码防乱码',text:'1. 简述稠密向量与稀疏向量的区别……'},
+  {name:'素材包.zip',ft:'.zip',loader:null,bad:true,desc:'',text:''}
+];
+const d1View=$('#d1-view');
+function renderD1(f){
+  document.querySelectorAll('#d1-belt .file-chip').forEach(c=>c.classList.toggle('sel',c.dataset.i===D1_FILES.indexOf(f)+''));
+  if(f.bad){
+    d1View.innerHTML='<div class="reject">日志：'+esc(f.name)+' 文件不支持加载 —— 记录后跳过，继续收下一份。<br><span style="font-size:13px">document_loaders 里没有 ".zip" 这个键，走的是 continue 分支。</span></div>';
+    return;
+  }
+  const now=new Date();
+  const ts=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+'T'+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  d1View.innerHTML=
+    '<div class="loader-view">'+
+      '<div class="loader-card"><div class="lc-name">🔑 '+esc(f.loader)+'</div><div class="lc-desc">'+esc(f.desc)+'</div>'+
+        '<div class="stamps"><span class="stamp">source: ai</span><span class="stamp">file_path: …/ai_data/'+esc(f.name)+'</span><span class="stamp">file_type: '+esc(f.ft)+'</span><span class="stamp">timestamp: '+ts+'</span></div></div>'+
+      '<div class="extract"><div class="ex-label">提取出的正文（page_content）</div><div class="ex-text">'+esc(f.text)+'</div>'+
+        '<div class="hint" style="margin-top:8px">loader.load() 返回的 Document = 这段正文 + 右边 4 个章（metadata）</div></div>'+
+    '</div>';
+}
+(function(){
+  const belt=$('#d1-belt');
+  D1_FILES.forEach(f=>{
+    const b=document.createElement('button');
+    b.type='button'; b.className='file-chip'+(f.bad?' bad':''); b.dataset.i=D1_FILES.indexOf(f);
+    b.innerHTML=esc(f.name)+' <span class="ft">'+esc(f.ft)+'</span>';
+    b.addEventListener('click',()=>renderD1(f));
+    belt.appendChild(b);
+  });
+  renderD1(D1_FILES[0]);
+})();
+
+/* ================= Demo2 拆分台 ================= */
+const D2_DOC={title:'《人工智能讲义》 · 第 1 章（来自「读」的 Document）',parents:[
+  {text:'大语言模型（LLM）是一种基于深度学习的自然语言处理模型，参数量通常达到数十亿级别。它的核心架构是 Transformer，依靠自注意力机制理解长距离的词与词之间的关系。',
+   children:['大语言模型（LLM）是一种基于深度学习的自然语言处理模型，参数量通常达到数十亿级别。','它的核心架构是 Transformer，依靠自注意力机制理解长距离的词与词之间的关系。']},
+  {text:'训练一个大语言模型通常分为两个阶段。预训练阶段在海量文本上自监督学习，让模型掌握语言规律；微调阶段则用少量标注数据，让模型学会遵循指令。',
+   children:['训练一个大语言模型通常分为两个阶段。','预训练阶段在海量文本上自监督学习，让模型掌握语言规律；','微调阶段则用少量标注数据，让模型学会遵循指令。']},
+  {text:'在实际应用中，大语言模型可以直接对话，也可以被集成到检索增强生成（RAG）系统中：先从知识库检索相关资料，再让模型根据资料回答，从而减少幻觉。',
+   children:['在实际应用中，大语言模型可以直接对话，也可以被集成到检索增强生成（RAG）系统中：','先从知识库检索相关资料，再让模型根据资料回答，从而减少幻觉。']}
+]};
+const D2_PRESETS=['什么是大语言模型？','LLM 是怎么训练的？','RAG 是什么？'];
+let d2Stage=0, d2Split=false;
+function d2Render(){
+  const box=$('#d2-doc');
+  if(d2Stage===0){
+    box.innerHTML='<div class="doc-paper"><div class="doc-title">'+esc(D2_DOC.title)+'</div><p style="font-size:14px">'+D2_DOC.parents.map(p=>esc(p.text)).join('<br><br>')+'</p></div>';
+    return;
+  }
+  let html='<div class="doc-paper"><div class="doc-title">'+esc(D2_DOC.title)+'</div>';
+  D2_DOC.parents.forEach((p,i)=>{
+    html+='<div class="parent-blk p'+i+'" data-p="'+i+'"><span class="parent-tag">父块 doc_0_parent_'+i+' · '+p.text.length+' 字</span>';
+    if(!d2Split){ html+=esc(p.text); }
+    else{
+      html+=p.children.map((c,k)=>'<span class="child-span" data-p="'+i+'" data-c="'+k+'" title="doc_0_parent_'+i+'_child_'+k+'">'+esc(c)+'<span class="score-badge"></span></span>').join('');
+    }
+    html+='</div>';
+  });
+  html+='</div>';
+  box.innerHTML=html;
+  document.querySelectorAll('#d2-child,#d2-parent').forEach(()=>{});
+  $('#d2-st1').classList.toggle('done',d2Stage>=1);
+  $('#d2-st2').classList.toggle('done',d2Stage>=2);
+  $('#d2-st3').classList.toggle('done',false);
+}
+function d2Ask(q){
+  if(!d2Split) return;
+  const clean=q.replace(/[，。？！、\?\!\.，]/g,'');
+  const grams=[];
+  for(let i=0;i<clean.length-1;i++) grams.push(clean.slice(i,i+2));
+  let best={score:-1,pi:0,ci:0};
+  D2_DOC.parents.forEach((p,pi)=>p.children.forEach((c,ci)=>{
+    const s=grams.filter(g=>c.includes(g)||c.includes(g.replace(/\s/g,''))).length;
+    if(s>best.score) best={score:s,pi,ci};
+  }));
+  d2Render();
+  document.querySelectorAll('#d2-doc .child-span').forEach(sp=>{
+    if(+sp.dataset.p===best.pi && +sp.dataset.c===best.ci) sp.classList.add('hit');
+  });
+  const pblk=document.querySelector('#d2-doc .parent-blk[data-p="'+best.pi+'"]');
+  pblk && pblk.classList.add('lift');
+  const parent=D2_DOC.parents[best.pi];
+  $('#d2-out').innerHTML=
+    '<div class="retrieve-out">'+
+      '<div class="to-label">向量化比对用的是<span style="color:var(--red-deep)">子块</span>（红框 = 最高分子块，模拟得分 '+best.score+'）→ 顺着 parent_id 找到整个父块：</div>'+
+      '<div class="to-parent"><b>父块 doc_0_parent_'+best.pi+'（实际送入大模型的内容）：</b><br>'+esc(parent.text)+'</div>'+
+      '<p class="hint" style="margin-top:8px">这就是「用小的找，用大的答」：搜索单元是子块，回答材料是父块。</p>'+
+    '</div>';
+  $('#d2-st3').classList.add('done');
+}
+$('#d2-parent').addEventListener('click',()=>{ d2Stage=1; d2Split=false; d2Render(); $('#d2-child').disabled=false; $('#d2-query').style.display='none'; });
+$('#d2-child').addEventListener('click',()=>{ d2Stage=2; d2Split=true; d2Render(); $('#d2-query').style.display='block'; $('#d2-out').innerHTML=''; });
+$('#d2-ask').addEventListener('click',()=>d2Ask($('#d2-input').value||D2_PRESETS[0]));
+$('#d2-input').addEventListener('keydown',e=>{ if(e.key==='Enter') d2Ask($('#d2-input').value||D2_PRESETS[0]); });
+D2_PRESETS.forEach(q=>{
+  const c=document.createElement('button'); c.type='button'; c.className='chip'; c.textContent=q;
+  c.addEventListener('click',()=>{ $('#d2-input').value=q; d2Ask(q); });
+  $('#d2-chips').appendChild(c);
+});
+
+/* ================= Demo3 双向量透视仪 ================= */
+const D3_DIMS=['车辆保养','天气','交通','AI模型','饮食','学习考试'];
+const D3_SYN={
+  '保养':'车辆保养','维护':'车辆保养','车辆':'车辆保养','汽车':'车辆保养','机油':'车辆保养','轮胎':'车辆保养','刹车':'车辆保养','电瓶':'车辆保养',
+  '天气':'天气','晴':'天气','雨':'天气','北京':'天气','户外':'天气',
+  '交通':'交通','堵':'交通','水上':'交通','上海':'交通','轮渡':'交通',
+  '大语言':'AI模型','模型':'AI模型','llm':'AI模型','ai':'AI模型','transformer':'AI模型','训练':'AI模型','深度':'AI模型',
+  '红烧肉':'饮食','做菜':'饮食','焯水':'饮食','炖':'饮食',
+  '复习':'学习考试','考试':'学习考试','提纲':'学习考试','习题':'学习考试'
+};
+const D3_SENTS=[
+  {t:'如何保养车辆',toks:['如何','保养','车辆'],tags:{'车辆保养':.95,'交通':.05}},
+  {t:'车辆保养的常见技巧',toks:['车辆','保养','常见','技巧'],tags:{'车辆保养':.9}},
+  {t:'汽车维护技巧',toks:['汽车','维护','技巧'],tags:{'车辆保养':.9}},
+  {t:'如何保养皮肤',toks:['如何','保养','皮肤'],tags:{}},
+  {t:'大语言模型 (LLM) 背景',toks:['大语言模型','LLM','背景'],tags:{'AI模型':.95,'学习考试':.1}}
+];
+function d3Tokenize(s){
+  const lower=s.toLowerCase();
+  const toks=[]; const known=new Set();
+  for(const w of Object.keys(D3_SYN)){
+    if(lower.includes(w)){ toks.push(w); known.add(D3_SYN[w]); }
+  }
+  if(toks.length===0){
+    const clean=lower.replace(/[^\u4e00-\u9fa5a-z0-9]/g,'');
+    for(let i=0;i<clean.length;i+=2) toks.push(clean.slice(i,i+2));
+  }
+  return toks;
+}
+function d3TagsFrom(s){
+  const lower=s.toLowerCase(); const tags={};
+  for(const w of Object.keys(D3_SYN)){
+    if(lower.includes(w)) tags[D3_SYN[w]]=(tags[D3_SYN[w]]||0)+1;
+  }
+  const total=Object.values(tags).reduce((a,b)=>a+b,0)||1;
+  const norm={}; for(const k in tags) norm[k]=tags[k]/total*.95;
+  return norm;
+}
+const D3_CELLS=48, D3_PER=8;
+function d3Dense(tags){
+  const cells=[];
+  for(let i=0;i<D3_CELLS;i++){
+    const dim=D3_DIMS[Math.floor(i/D3_PER)];
+    const r=rngFactory('dense:'+dim+':'+i)();
+    const w=tags[dim]||0;
+    cells.push(Math.max(.04, w*(0.72+0.28*r)+(w>0?0.06*r:0)));
+  }
+  return cells;
+}
+function d3Sparse(toks){
+  const slots={};
+  toks.forEach((t,i)=>{
+    let h=0; for(const c of t) h=(h*131+c.charCodeAt(0))>>>0;
+    const idx=h%D3_CELLS;
+    const w=Math.min(.98,.34+t.length*.11+rngFactory('sp:'+t)()*.12+(i*.02));
+    slots[idx]=Math.max(slots[idx]||0,w);
+  });
+  return slots;
+}
+function d3Strip(el,cells,cls){
+  el.innerHTML=cells.map(v=>'<i class="'+(v>.09?'f':'')+'" style="height:'+Math.max(4,v*100)+'%" title="'+(v*1).toFixed(2)+'"></i>').join('');
+}
+function d3StripSlots(el,slots){
+  let html='';
+  for(let i=0;i<D3_CELLS;i++){
+    const v=slots[i]||0;
+    html+='<i class="'+(v>0?'f':'')+'" style="height:'+(v>0?Math.max(8,v*100):4)+'%" title="'+(v?('词座位#'+i+' 权重 '+v.toFixed(2)):'0')+'"></i>';
+  }
+  el.innerHTML=html;
+}
+function cosine(a,b){
+  const keys=new Set([...Object.keys(a),...Object.keys(b)]);
+  let dot=0,na=0,nb=0;
+  keys.forEach(k=>{ dot+=(a[k]||0)*(b[k]||0); na+=(a[k]||0)**2; nb+=(b[k]||0)**2; });
+  return dot/(Math.sqrt(na)*Math.sqrt(nb)||1);
+}
+function d3Run(){
+  const text=$('#d3-input').value.trim()||'如何保养车辆';
+  const preset=D3_SENTS.find(s=>s.t===text);
+  const tags=preset?preset.tags:d3TagsFrom(text);
+  const toks=preset?preset.toks:d3Tokenize(text);
+  const fellBack=!preset && !Object.keys(D3_SYN).some(w=>text.toLowerCase().includes(w));
+  d3Strip($('#d3-dense'),d3Dense(tags));
+  const slots=d3Sparse(toks);
+  d3StripSlots($('#d3-sparse'),slots);
+  $('#d3-toks').innerHTML='分词结果：'+toks.map(t=>esc(t)).map(t=>'<span style="background:var(--green-wash);border-radius:4px;padding:1px 5px;margin-right:4px;color:var(--green)">'+t+'</span>').join('')+(fellBack?' <span style="color:var(--ink-soft)">（生词按二字切片演示）</span>':'');
+  // 相似度表：以「当前输入」为基准，和每句话分别比
+  const rows=D3_SENTS.map(s=>{
+    const ds=cosine(tags,s.tags);                              // 稠密：语义标签向量夹角
+    const overlap=toks.filter(t=>s.toks.includes(t)).length;   // 稀疏：与该行分词的实际重合数
+    const ss=Math.min(1,overlap/Math.max(toks.length,2));
+    const fuse=(0.7*ss+1.0*ds)/1.7;
+    return {t:s.t,ds,ss,fuse,self:s.t===text};
+  }).sort((a,b)=>b.fuse-a.fuse);
+  $('#d3-sim').innerHTML=
+    '<div class="sim-head"><span>与「'+esc(text)+'」比</span><span>稠密相似度</span><span>稀疏相似度</span><span>加权融合 (0.7/1.0)</span></div>'+
+    rows.map(r=>
+      '<div class="sim-row'+(r.self?' best':'')+'"><span>'+esc(r.t)+(r.self?' ← 当前':'')+'</span>'+
+      '<span><span class="bar dense"><i style="width:'+(r.ds*100).toFixed(0)+'%"></i></span> '+(r.ds).toFixed(2)+'</span>'+
+      '<span><span class="bar sparse"><i style="width:'+(r.ss*100).toFixed(0)+'%"></i></span> '+(r.ss).toFixed(2)+'</span>'+
+      '<span><span class="bar fuse"><i style="width:'+(r.fuse*100).toFixed(0)+'%"></i></span> <b>'+(r.fuse).toFixed(2)+'</b></span></div>'
+    ).join('');
+  // Milvus 一行
+  const md5='（内容 MD5 · 32 位十六进制）';
+  const denseMini=d3Dense(tags).map(v=>'<i class="'+(v>.09?'f':'')+'" style="height:'+Math.max(8,v*100)+'%"></i>').join('');
+  const sparseMini=(()=>{let h='';for(let i=0;i<48;i++){const v=slots[i]||0;h+='<i class="'+(v>0?'f':'')+'" style="height:'+(v>0?Math.max(10,v*100):8)+'%"></i>';}return h;})();
+  $('#d3-milvus').innerHTML=
+    '<table><tr><th>id</th><th>text</th><th>dense_vector</th><th>sparse_vector</th><th>parent_id</th><th>parent_content</th><th>source</th><th>timestamp</th></tr>'+
+    '<tr><td>'+md5+'</td><td>'+esc(text.length>14?text.slice(0,14)+'…':text)+'</td>'+
+    '<td class="dense-mini"><span class="mini">'+denseMini+'</span> 1024 维</td>'+
+    '<td class="sparse-mini"><span class="mini">'+sparseMini+'</span> '+Object.keys(slots).length+' 个非零位</td>'+
+    '<td>doc_0_parent_0</td><td class="nullv">（所属父块完整内容…）</td><td>ai</td><td>2026-09-11T…</td></tr></table>';
+}
+$('#d3-go').addEventListener('click',d3Run);
+$('#d3-input').addEventListener('keydown',e=>{ if(e.key==='Enter') d3Run(); });
+D3_SENTS.forEach(s=>{
+  const c=document.createElement('button'); c.type='button'; c.className='chip'; c.textContent=s.t;
+  c.addEventListener('click',()=>{ $('#d3-input').value=s.t; d3Run(); });
+  $('#d3-chips').appendChild(c);
+});
+d3Run();
+
+/* ================= Demo4 混合检索模拟台 ================= */
+const D4_CORPUS=[
+  {id:'c1',text:'车辆保养包括定期更换机油、检查轮胎气压和刹车系统。',parent:'父块A · 第 2 章 汽车保养指南',kw:['保养','车辆','机油','轮胎','刹车'],tags:{'车辆保养':.95,'交通':.05}},
+  {id:'c2',text:'汽车长期停放前应清洗车身、断开电瓶，防止电瓶亏电。',parent:'父块A · 第 2 章 汽车保养指南',kw:['汽车','停放','电瓶','清洗'],tags:{'车辆保养':.85}},
+  {id:'c3',text:'大语言模型（LLM）是基于 Transformer 的深度学习模型。',parent:'父块B · 第 1 章 LLM 背景',kw:['大语言模型','LLM','Transformer','深度学习'],tags:{'AI模型':.95}},
+  {id:'c4',text:'LLM 训练分为预训练和微调两个阶段。',parent:'父块B · 第 1 章 LLM 背景',kw:['LLM','训练','预训练','微调'],tags:{'AI模型':.8,'学习考试':.15}},
+  {id:'c5',text:'RAG 检索增强生成：先从知识库检索资料，再让模型照资料回答。',parent:'父块C · 第 4 章 RAG 原理',kw:['RAG','检索','知识库','回答'],tags:{'AI模型':.9,'学习考试':.2}},
+  {id:'c6',text:'上海水上交通发达，黄浦江上有轮渡和游船。',parent:'父块D · 城市交通',kw:['上海','交通','水上','轮渡'],tags:{'交通':.9}},
+  {id:'c7',text:'北京今天晴转多云，适合户外活动。',parent:'父块E · 天气速记',kw:['北京','天气','晴','户外'],tags:{'天气':.9}},
+  {id:'c8',text:'红烧肉需要先焯水，再用小火慢炖一小时。',parent:'父块F · 家常菜谱',kw:['红烧肉','焯水','慢炖'],tags:{'饮食':.95}}
+];
+const D4_QS=[
+  {t:'如何保养车辆',kw:['保养','车辆'],tags:{'车辆保养':.95,'交通':.05}},
+  {t:'大语言模型 (LLM) 背景',kw:['大语言模型','LLM','背景'],tags:{'AI模型':.95}},
+  {t:'上海水上交通堵了',kw:['上海','水上','交通','堵'],tags:{'交通':.9,'天气':.05}}
+];
+let d4W=0.7, d4Fused=false, d4Ranked=false;
+function d4Scores(q){
+  const lower=(q.t||'').toLowerCase();
+  const qkw=q.t? q.kw : Object.keys(D4_SYN).filter(w=>lower.includes(w)).slice(0,4);
+  const qtags=q.t? q.tags : d4TagsFrom(lower);
+  return D4_CORPUS.map(c=>{
+    const hitKw=qkw.filter(k=>c.kw.some(ck=>ck.includes(k)||k.includes(ck)));
+    const s=Math.min(1,hitKw.length/Math.max(qkw.length,2));
+    const phrase=qkw.some(k=>c.text.toLowerCase().includes(k.toLowerCase()))?0.18:0;
+    return {c, s:Math.min(1,s+phrase), d:cosine(qtags,c.tags), hitKw};
+  });
+}
+function d4ItemHTML(r,score,dense){
+  return '<div class="r-item" data-id="'+r.c.id+'"><span class="ri-score">'+score.toFixed(2)+'</span>'+esc(r.c.text)+
+    (r.hitKw&&r.hitKw.length?'<span style="color:var(--green);font-size:11px;margin-left:6px">词中: '+r.hitKw.map(esc).join('/')+'</span>':'')+
+    '<div class="bar"><i style="width:'+(score*100).toFixed(0)+'%"></i></div>'+
+    '<div style="font-size:11px;color:var(--ink-soft);margin-top:4px">'+esc(r.c.parent)+'</div></div>';
+}
+function d4Go(){
+  const qRaw=$('#d4-input').value.trim()||'如何保养车辆';
+  const preset=D4_QS.find(q=>q.t===qRaw);
+  const q=preset||{t:qRaw,kw:Object.keys(D4_SYN).filter(w=>qRaw.toLowerCase().includes(w)).slice(0,4),tags:d4TagsFrom(qRaw)};
+  const rs=d4Scores(preset||{t:qRaw,kw:q.kw,tags:q.tags});
+  d4Fused=false; d4Ranked=false;
+  $('#d4-rerank').disabled=false;
+  $('#d4-lanes').style.display='block';
+  const byS=[...rs].sort((a,b)=>b.s-a.s).slice(0,3);
+  const byD=[...rs].sort((a,b)=>b.d-a.d).slice(0,3);
+  $('#d4-lane-s').innerHTML=byS.map(r=>d4ItemHTML(r,r.s,false)).join('');
+  $('#d4-lane-d').innerHTML=byD.map(r=>d4ItemHTML(r,r.d,true)).join('');
+  d4Merge(rs,q);
+  $('#d4-final').innerHTML='';
+  $('#d4-note').innerHTML='两路各取 Top-3，下面的合议榜随权重滑块实时变化。选好权重后点「③ 重排 Top-M」看 CrossEncoder 怎么改写榜单。';
+  $('#d4-note').style.display='block';
+}
+function d4Merge(rs,q){
+  const wS=d4W, wD=1.0;
+  const fused=rs.map(r=>({...r,f:(wS*r.s+wD*r.d)/(wS+wD)})).sort((a,b)=>b.f-a.f);
+  // 按父块去重：同父块只留最高分，其余标注合并
+  const seen=new Set(), merged=[];
+  fused.forEach(r=>{
+    if(seen.has(r.c.parent)) return;
+    const same=fused.filter(x=>x.c.parent===r.c.parent&&x.c.id!==r.c.id).length;
+    seen.add(r.c.parent);
+    merged.push({...r,same});
+  });
+  const top=merged.slice(0,3);
+  $('#d4-merge').innerHTML=
+    '<div style="font-family:var(--serif);font-weight:700;font-size:15.5px;margin:6px 0 2px">② 融合 + 按父块去重</div>'+
+    '<div class="fused-list">'+top.map((r,i)=>
+      '<div class="f-item'+(d4Ranked&&i<2?' win':'')+'"><span class="fo-score">'+r.f.toFixed(2)+'</span>'+
+      '<div class="fo-body">'+esc(r.c.text)+
+        '<div class="fo-meta">'+esc(r.c.parent)+(r.same?' · 同父块另有 '+r.same+' 条已合并':'')+
+        (d4Ranked&&i<2?'<span class="to-llm">→ 送大模型</span>':'')+'</div></div></div>'
+    ).join('')+'</div>';
+}
+function d4Rerank(){
+  d4Ranked=true;
+  // 模拟 CrossEncoder：成对精读，比内积更挑剔 —— 词全中但语义歪的会被压下去
+  const qRaw=$('#d4-input').value.trim()||'如何保养车辆';
+  const preset=D4_QS.find(q=>q.t===qRaw);
+  const rs=d4Scores(preset||{t:qRaw,kw:Object.keys(D4_SYN).filter(w=>qRaw.toLowerCase().includes(w)).slice(0,4),tags:d4TagsFrom(qRaw)});
+  const reranked=rs.map(r=>{
+    const topicMatch=Object.keys(preset?preset.tags:{}).some(k=>r.c.tags[k]);
+    const rr=Math.min(1, 0.55*r.d + 0.3*r.s + (topicMatch?0.22:0) + (r.s>0.6?0.08:0));
+    return {...r, rr};
+  }).sort((a,b)=>b.rr-a.rr);
+  const merged=[]; const seen=new Set();
+  reranked.forEach(r=>{
+    if(seen.has(r.c.parent)) return;
+    const same=reranked.filter(x=>x.c.parent===r.c.parent&&x.c.id!==r.c.id).length;
+    seen.add(r.c.parent); merged.push({...r,same});
+  });
+  d4Merge(rs,preset||{t:qRaw,kw:[],tags:{}});
+  // 重排后重画合议榜：用 rr 排序
+  const top=merged.slice(0,2);
+  $('#d4-merge').querySelector('.fused-list').innerHTML=merged.slice(0,3).map((r,i)=>
+    '<div class="f-item'+(i<2?' win':'')+'"><span class="fo-score">'+r.rr.toFixed(2)+'</span>'+
+    '<div class="fo-body">'+esc(r.c.text)+
+      '<div class="fo-meta">'+esc(r.c.parent)+(r.same?' · 同父块另有 '+r.same+' 条已合并':'')+
+      (i<2?'<span class="to-llm">→ 送大模型</span>':'')+'</div></div></div>').join('');
+  $('#d4-merge').querySelector('div').innerHTML='③ 重排之后（CrossEncoder 精读打分，前 2 名 = CANDIDATE_M）';
+  $('#d4-note').innerHTML='对比一下重排前后的顺序：reranker 把「问题和段落放在一起精读」，常把向量合议榜上名次靠后但真正对题的段落顶上来 —— 这就是「先快筛、再精挑」。';
+}
+$('#d4-go').addEventListener('click',d4Go);
+$('#d4-rerank').addEventListener('click',d4Rerank);
+$('#d4-input').addEventListener('keydown',e=>{ if(e.key==='Enter') d4Go(); });
+$('#d4-slider').addEventListener('input',e=>{
+  d4W=parseFloat(e.target.value); $('#d4-ws').textContent=d4W.toFixed(1);
+  if($('#d4-lanes').style.display==='block'){
+    const qRaw=$('#d4-input').value.trim()||'如何保养车辆';
+    const preset=D4_QS.find(q=>q.t===qRaw);
+    const rs=d4Scores(preset||{t:qRaw,kw:Object.keys(D4_SYN).filter(w=>qRaw.toLowerCase().includes(w)).slice(0,4),tags:d4TagsFrom(qRaw)});
+    if(d4Ranked) d4Rerank(); else d4Merge(rs,preset||{t:qRaw,kw:[],tags:{}});
+  }
+});
+D4_QS.forEach(q=>{
+  const c=document.createElement('button'); c.type='button'; c.className='chip'; c.textContent=q.t;
+  c.addEventListener('click',()=>{ $('#d4-input').value=q.t; d4Go(); });
+  $('#d4-chips').appendChild(c);
+});
+d4Go();
+</script>
+</body>
+</html>
