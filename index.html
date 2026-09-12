@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>RAG 学习实验室 · 读 / 切 / 存 / 检</title>
+<title>RAG 学习实验室 · 读 切 存 检 答 缓 流 图</title>
 <style>
 :root{
   --paper:#FDFDFA;
@@ -280,6 +280,8 @@ footer .note{margin-top:8px}
       <a href="#ch-search"><b>检</b>混合检索</a><span class="arr">→</span>
       <a href="#ch-answer"><b>答</b>生成</a><span class="arr">→</span>
       <a href="#ch-cache"><b>缓</b>缓存</a><span class="arr">→</span>
+      <a href="#ch-stream"><b>流</b>上线</a><span class="arr">→</span>
+      <a href="#ch-graph"><b>图</b>LangGraph</a><span class="arr">→</span>
       <a href="#ch-code"><b>码</b>全套代码</a>
     </nav>
   </div>
@@ -307,6 +309,12 @@ footer .note{margin-top:8px}
       <div class="flow-node flow-store"><small>8 个字段 + 双索引</small><b>Milvus</b></div>
     </div>
     <div class="flow-row">
+      <span class="flow-tag">进阶编排</span>
+      <a class="flow-node" href="#ch-graph" style="text-decoration:none;color:inherit"><small>链升级为图：循环 / 并行 / 人工介入</small><b>⑧ 图</b></a>
+      <span class="flow-arr">→</span>
+      <div class="flow-node"><small>路由 · 并行 · 协调器 · 评估优化</small><b>六种智能体架构</b></div>
+    </div>
+    <div class="flow-row">
       <span class="flow-tag">在线问答</span>
       <div class="flow-node"><small>「如何保养车辆？」</small><b>用户提问</b></div>
       <span class="flow-arr">→</span>
@@ -315,6 +323,8 @@ footer .note{margin-top:8px}
       <a class="flow-node hot" href="#ch-search" style="text-decoration:none;color:inherit"><small>双向量两路查 + 融合 + 重排</small><b>④ 检</b></a>
       <span class="flow-arr">→</span>
       <a class="flow-node hot" href="#ch-answer" style="text-decoration:none;color:inherit"><small>分类路由 → 策略检索 → 拼提示词</small><b>⑤ 答</b></a>
+      <span class="flow-arr">→</span>
+      <a class="flow-node" href="#ch-stream" style="text-decoration:none;color:inherit"><small>逐 token 推给前端</small><b>⑦ 流</b></a>
     </div>
   </div>
 </section>
@@ -420,6 +430,8 @@ def load_documents_from_directory(directory_path: str) -> [Document]:
         <a href="#ch-search">④ 检 · 混合检索</a>
         <a href="#ch-answer">⑤ 答 · 生成与策略</a>
         <a href="#ch-cache">⑥ 缓 · 缓存加速</a>
+        <a href="#ch-stream">⑦ 流 · 工程上线</a>
+        <a href="#ch-graph">⑧ 图 · LangGraph</a>
         <a href="#ch-code">全套代码</a>
         <a href="#appendix">附录 · 参数与快问快答</a>
       </div>
@@ -574,6 +586,8 @@ def _split_parent_then_child(doc, doc_index, parent_splitter, child_splitter):
         <a href="#ch-search">④ 检 · 混合检索</a>
         <a href="#ch-answer">⑤ 答 · 生成与策略</a>
         <a href="#ch-cache">⑥ 缓 · 缓存加速</a>
+        <a href="#ch-stream">⑦ 流 · 工程上线</a>
+        <a href="#ch-graph">⑧ 图 · LangGraph</a>
         <a href="#ch-code">全套代码</a>
         <a href="#appendix">附录 · 参数与快问快答</a>
       </div>
@@ -733,6 +747,8 @@ def _split_parent_then_child(doc, doc_index, parent_splitter, child_splitter):
         <a href="#ch-search">④ 检 · 混合检索</a>
         <a href="#ch-answer">⑤ 答 · 生成与策略</a>
         <a href="#ch-cache">⑥ 缓 · 缓存加速</a>
+        <a href="#ch-stream">⑦ 流 · 工程上线</a>
+        <a href="#ch-graph">⑧ 图 · LangGraph</a>
         <a href="#ch-code">全套代码</a>
         <a href="#appendix">附录 · 参数与快问快答</a>
       </div>
@@ -881,6 +897,8 @@ print(model1.predict(pairs))
         <a href="#ch-search">④ 检 · 混合检索</a>
         <a href="#ch-answer">⑤ 答 · 生成与策略</a>
         <a href="#ch-cache">⑥ 缓 · 缓存加速</a>
+        <a href="#ch-stream">⑦ 流 · 工程上线</a>
+        <a href="#ch-graph">⑧ 图 · LangGraph</a>
         <a href="#ch-code">全套代码</a>
         <a href="#appendix">附录 · 参数与快问快答</a>
       </div>
@@ -942,6 +960,8 @@ print(model1.predict(pairs))
         <a href="#ch-search">④ 检 · 混合检索</a>
         <a href="#ch-answer">⑤ 答 · 生成与策略</a>
         <a href="#ch-cache">⑥ 缓 · 缓存加速</a>
+        <a href="#ch-stream">⑦ 流 · 工程上线</a>
+        <a href="#ch-graph">⑧ 图 · LangGraph</a>
         <a href="#ch-code">全套代码</a>
         <a href="#appendix">附录 · 参数与快问快答</a>
       </div>
@@ -1002,6 +1022,291 @@ print(model1.predict(pairs))
         <a href="#ch-search">④ 检 · 混合检索</a>
         <a href="#ch-answer">⑤ 答 · 生成与策略</a>
         <a href="#ch-cache">⑥ 缓 · 缓存加速</a>
+        <a href="#ch-stream">⑦ 流 · 工程上线</a>
+        <a href="#ch-graph">⑧ 图 · LangGraph</a>
+        <a href="#ch-code">全套代码</a>
+        <a href="#appendix">附录 · 参数与快问快答</a>
+      </div>
+    </aside>
+  </div>
+</section>
+
+
+<!-- ============ 第 7 步 流 ============ -->
+<section class="chapter" id="ch-stream">
+  <div class="ch-head">
+    <span class="seal">流</span>
+    <div><h2>工程上线</h2><div class="sub">流式输出 · 会话记忆 · FastAPI 对接 · RAGAS 评估</div></div>
+  </div>
+  <div class="ch-grid">
+    <div class="ch-main prose">
+      <p><span class="term">这一步在干嘛：</span>把「能跑的系统」变成「能上线的系统」—— 四件事：<b>流式输出</b>（回答一个字一个字往外蹦，用户不干等）、<b>会话记忆</b>（记住本轮对话说过什么，「它学费多少」能听懂）、<b>FastAPI + WebSocket 对接前端</b>（逐帧推送）、<b>RAGAS 评估</b>（用分数证明改动有没有变好）。</p>
+
+      <h3 class="blk">大白话：餐厅开业的四件事</h3>
+      <p><b>流式输出</b>：菜别等全做好再上，好一道上一道 —— 大模型每生成几个字就推给前端（打字机效果），体感等待从 30 秒变成 1 秒。<b>会话记忆</b>：老顾客的口味记在小本本上（MySQL 会话表），每轮问答存一行，下轮把最近几条拼进提示词，所以「它」有指代可查。<b>对接前端</b>：堂食点单系统（WebSocket 帧协议：<code>start → token → … → end</code>）。<b>RAGAS 评估</b>：开业体检报告，改了菜谱（检索策略、切块大小）到底有没有变好，看分数不靠感觉。</p>
+
+      <h3 class="blk">RAGAS：给 RAG 打分的四位考官</h3>
+      <p>RAGAS 用一个大模型当考官，从<b>检索</b>和<b>生成</b>两头各出两名考官。四个公式全是「数比例」，一个例子看懂（问「苹果公司成立于哪一年？」，检索回来 3 句话，只有 1 句含成立年份）：</p>
+      <table class="info">
+        <tr><th>指标</th><th>考的是</th><th>公式（大白话）</th><th>需要的数据</th></tr>
+        <tr><td><code>context_precision</code> 上下文相关性</td><td>检索「准不准」—— 有没有夹带无关内容</td><td>相关句子 1 ÷ 总句子 3 = <b>0.33</b></td><td>问题 + 上下文</td></tr>
+        <tr><td><code>context_recall</code> 上下文召回率</td><td>检索「全不全」—— 关键点漏没漏</td><td>被支持的声明 ÷ 标准答案声明总数</td><td>问题 + 上下文 + <b>标准答案</b></td></tr>
+        <tr><td><code>faithfulness</code> 忠实度</td><td>生成「编没编」—— 幻觉检测</td><td>被上下文支持的陈述 ÷ 答案陈述总数</td><td>答案 + 上下文</td></tr>
+        <tr><td><code>answer_relevancy</code> 答案相关性</td><td>生成「切不切题」—— 答非所问检测</td><td>由答案反推的问题与原问题的平均相似度</td><td>问题 + 答案</td></tr>
+      </table>
+      <p>唯一要人工干的活：<b>标注 ground_truth（标准答案）</b>—— 考官改卷也需要参考答案。有了这套分数，「换了切块大小 / 换了检索策略到底有没有效」就能自动化对比，而不是改一版感觉好一版。</p>
+
+      <h3 class="blk">实验台 · 上线体验台</h3>
+      <div class="lab">
+        <div class="lab-head"><span class="lamp"></span><b>打字机效果 + 会话记忆对照</b><span>WebSocket 帧与记忆拼接为模拟演示</span></div>
+        <div class="lab-body">
+          <div class="btn-row">
+            <button class="btn primary" id="d7-stream" type="button">▶ 体验流式输出</button>
+            <button class="btn" id="d7-clear" type="button">清空</button>
+          </div>
+          <div id="d7-typed" class="to-parent" style="margin-top:12px;min-height:3em;border-color:var(--green)"></div>
+          <div id="d7-frames" style="margin-top:10px;font-family:var(--mono);font-size:11.5px;color:var(--ink-soft);max-height:110px;overflow:auto;background:var(--paper-2);border-radius:8px;padding:8px 12px"></div>
+          <div style="border-top:1.5px dashed var(--line);margin-top:16px;padding-top:14px">
+            <div class="btn-row">
+              <button class="btn" id="d7-turn1" type="button">第 1 问：AI学科有什么课程？</button>
+              <button class="btn" id="d7-turn2" type="button">第 2 问：它学费多少？</button>
+              <label class="stage-tag" style="cursor:pointer"><input type="checkbox" id="d7-mem" checked style="accent-color:var(--red)"> 携带会话记忆</label>
+            </div>
+            <div id="d7-hist" style="margin-top:10px"></div>
+            <div id="d7-ans2" style="margin-top:10px"></div>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="blk">核心代码</h3>
+      <div class="codebox">
+        <div class="cb-head"><span class="cb-file">rag_qa/core/rag_system.py + main.py</span>流式输出（yield 逐 token）+ 会话记忆拼接<button class="cb-copy" type="button">复制</button></div>
+        <pre><code class="lang-py"># generate_answer 改为生成器：stream=True，边生成边 yield
+def generate_answer(self, query, source_filter=None, history=None):
+    # 会话记忆：取最近 5 条，拼成一段文本塞进提示词的 {history} 槽
+    history = (history or [])[:5]
+    history_context = "\n".join(f"Q:{i['question']}\nA:{i['answer']}" for i in history)
+    ...
+    prompt = RAGPrompts.rag_prompt().format(
+        context=context, history=history_context,
+        question=query, phone=conf.CUSTOMER_SERVICE_PHONE)
+    completion = self.llm.chat.completions.create(
+        model=conf.LLM_MODEL, messages=[...],
+        timeout=30, stream=True)          # ← 流式开关
+    for chunk in completion:              # 一个 chunk ≈ 几个字
+        if chunk.choices and chunk.choices[0].delta.content:
+            yield chunk.choices[0].delta.content
+
+# IntegratedQASystem.query：统一出口，逐帧 (token, 是否结束)
+def query(self, query, source_filter=None, session_id=None):
+    answer = self.bm25_search.search(query, threshold=0.9)
+    if answer:                                     # FAQ 命中：整段返回
+        self.mysql_client.update_session_history(session_id, query, answer)
+        yield answer, True
+    else:                                          # RAG：逐 token 流出
+        history = self.mysql_client.fetch_recent_history(session_id)
+        collected = ""
+        for token in self.rag_system.generate_answer(query, source_filter, history):
+            collected += token
+            yield token, False
+        self.mysql_client.update_session_history(session_id, query, collected)
+        yield "", True</code></pre>
+      </div>
+      <details class="codebox">
+        <div class="cb-head"><span class="cb-file">app.py + ragas_evaluate.py</span>WebSocket 逐帧推送 + RAGAS 评估脚本（点击展开）</div>
+        <pre><code class="lang-py"># app.py —— WebSocket 流式接口（节选）
+@app.websocket("/api/stream")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    data = json.loads(await websocket.receive_text())
+    # 帧协议：start → 多个 token 帧 → end
+    await websocket.send_json({"type": "start", "session_id": session_id})
+    for token, is_complete in qa_system.query(query, source_filter, session_id):
+        if token:
+            await websocket.send_json({"type": "token", "token": token})
+        if is_complete:
+            await websocket.send_json({"type": "end", "is_complete": True})
+            break
+        await asyncio.sleep(0.01)
+
+# ragas_evaluate.py —— 四指标自动评估（节选）
+dataset = Dataset.from_dict({
+    "question":     [item["question"] for item in data],
+    "answer":       [item["answer"] for item in data],
+    "contexts":     [item["context"] for item in data],
+    "ground_truth": [item["ground_truth"] for item in data],  # 唯一人工标注
+})
+result = evaluate(dataset=dataset,
+                  metrics=[faithfulness, answer_relevancy,
+                           context_precision, context_recall],
+                  llm=llm, embeddings=embeddings)   # 考官也用大模型
+pd.DataFrame([result]).to_csv("ragas_results.csv", index=False)</code></pre>
+      </details>
+
+      <div class="verify"><b>怎么验证这一步跑通了：</b>① 跑 main.py：答案应逐段打印而非一次性出现；② 用同一 session_id 连问「AI学科有什么课程？」「它学费多少？」—— 第二问日志里的 history 槽应有第一轮内容，回答能解析「它」；③ 浏览器打开测试页，看到逐字输出；④ 准备 10 条带标准答案的 QA 对跑 RAGAS，拿到四个分数存成 CSV —— 这是你以后每次改动的「体检基线」。</div>
+    </div>
+
+    <aside class="side">
+      <div class="note">流式的价值是<b>体感</b>而不是提速：总时长没变，但第一秒就有内容蹦出来，用户就不走了 —— 和第⑥章 Redis 是一个目标：伺候用户的耐心。</div>
+      <div class="note">会话记忆三件套：<b>存</b>（每轮写会话表）→ <b>取</b>（按 session_id 拉最近 5 条）→ <b>拼</b>（填进 {history} 槽，并在提示词里嘱咐「无关历史请忽略」）。截断 5 条是防提示词爆炸。</div>
+      <div class="note">RAGAS 四考官两两配对：<b>前两个考检索（准不准、全不全），后两个考生成（编没编、切不切题）</b>。召回率必须有人工标准答案，其他三个可以全自动。</div>
+      <div class="anchor">
+        本页目录
+        <a href="#ch-read">① 读 · 文档加载</a>
+        <a href="#ch-split">② 切 · 父子块拆分</a>
+        <a href="#ch-store">③ 存 · 向量化入库</a>
+        <a href="#ch-search">④ 检 · 混合检索</a>
+        <a href="#ch-answer">⑤ 答 · 生成与策略</a>
+        <a href="#ch-cache">⑥ 缓 · 缓存加速</a>
+        <a href="#ch-stream">⑦ 流 · 工程上线</a>
+        <a href="#ch-graph">⑧ 图 · LangGraph</a>
+        <a href="#ch-stream">⑦ 流 · 工程上线</a>
+        <a href="#ch-graph">⑧ 图 · LangGraph</a>
+        <a href="#ch-code">全套代码</a>
+        <a href="#appendix">附录 · 参数与快问快答</a>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ 第 8 步 图 ============ -->
+<section class="chapter" id="ch-graph">
+  <div class="ch-head">
+    <span class="seal">图</span>
+    <div><h2>LangGraph 编排</h2><div class="sub">状态 · 节点 · 边 · 五种流程控制 · 六种智能体架构</div></div>
+  </div>
+  <div class="ch-grid">
+    <div class="ch-main prose">
+      <p><span class="term">这一步在干嘛：</span>前面几章是一条<b>写死的流水线</b>（链，Chain）。LangGraph 把编排升级成<b>图</b>：节点是步骤（函数），边是走向（可带条件），状态在各节点间传递 —— 支持<b>循环、分支、并行、人工介入</b>，这正是复杂智能体需要的。</p>
+      <table class="info">
+        <tr><th>生态位</th><th>是什么</th><th>开源/商业</th></tr>
+        <tr><td><b>LangChain</b></td><td>组件库 + 链式编排（有向无环，一条道走到黑）</td><td>OSS</td></tr>
+        <tr><td><b>LangGraph</b></td><td>有状态的图编排：能循环、能分支、能并行、能暂停等人</td><td>OSS</td></tr>
+        <tr><td><b>LangSmith</b></td><td>观测平台：调试 / 评估 / 监控（相当于商业版 RAGAS + 日志）</td><td>商业</td></tr>
+        <tr><td><b>LangGraph Platform</b></td><td>一键把图部署成生产级 API</td><td>商业</td></tr>
+      </table>
+      <p><b>Chain 什么时候不够用？</b>大白话：链是<b>流水线传送带</b>，图是<b>地铁线路图</b> —— 地铁能环线（循环）、能换乘（分支）、能多线同发（并行）、能临时停车（人工介入）。比如烧水：水没开就回去接着烧 —— 传送带掉不了头，地铁图随便绕。</p>
+
+      <h3 class="blk">三件套：State / Node / Edge</h3>
+      <p><b>State 状态</b>：所有节点共享的一块<b>黑板</b>（TypedDict 类），节点往黑板上写字，下一个节点接着读。<b>Node 节点</b>：一个函数，State 进、State 出。<b>Edge 边</b>：普通边 = 固定下一站；<b>条件边</b> = 一个函数看黑板上的状态返回路由标识，查路由表决定下一站。</p>
+      <div class="codebox">
+        <div class="cb-head"><span class="cb-file">入门计算图</span>x=x+y → x=x*y 的最小完整图<button class="cb-copy" type="button">复制</button></div>
+        <pre><code class="lang-py">from typing import TypedDict
+from langgraph.constants import START, END
+from langgraph.graph import StateGraph
+
+# 1) 状态：黑板，继承 TypedDict
+class CalState(TypedDict):
+    x: int
+    y: int
+
+# 2) 节点：State 进，State 出
+def add_node(s: CalState) -> CalState:
+    s["x"] = s["x"] + s["y"];  return s
+
+def multi_node(s: CalState) -> CalState:
+    s["x"] = s["x"] * s["y"];  return s
+
+# 3) 建图：创建 → 加节点 → 加边 → 编译
+g = StateGraph(CalState)
+g.add_node("add_node", add_node)
+g.add_node("multi_node", multi_node)
+g.add_edge(START, "add_node")            # 普通边
+g.add_edge("add_node", "multi_node")
+g.add_edge("multi_node", END)
+graph = g.compile()
+
+graph.invoke({"x": 1, "y": 2})   # → {'x': 6, 'y': 2}</code></pre>
+      </div>
+
+      <h3 class="blk">五种流程控制，全在「冲一杯咖啡」里</h3>
+      <p><b>分支</b>（条件边选路）：水温到 100 走「冲咖啡」，没到走「继续加热」。<b>循环</b>（条件边指回自己）：LangGraph 里没有 while —— 循环 = 「水没开 → 烧水节点自己」这条边，每次 +10 度直到 100。<b>并行</b>（START 同时连多个节点）：烧水和磨咖啡豆互不干扰同时干；都写同一个字段会打架，冲突字段要配合并规则 <code>Annotated[int, rule]</code>。<b>人工介入</b>（interrupt）：「先生要加糖吗？」—— 节点里调 <code>interrupt()</code> 整个图<b>暂停</b>，人通过 <code>Command(resume="是")</code> 喂回决策再继续；图必须带记忆，否则恢复不了。<b>子图</b>：烧水、加糖各自封装成小图再挂进总图，像函数封装一样治复杂性。</p>
+      <div class="codebox">
+        <div class="cb-head"><span class="cb-file">咖啡图节选</span>条件边循环 + 人工介入两个关键片段<button class="cb-copy" type="button">复制</button></div>
+        <pre><code class="lang-py"># 循环：条件边指回自己 —— 烧水直到 100 度
+def 水温判断(state):
+    return "水烧开了" if state["水温"] == 100 else "水没开"
+
+builder.add_conditional_edges(
+    "烧水节点", 水温判断,
+    {"水烧开了": "冲咖啡节点", "水没开": "烧水节点"})   # ← 指回自己 = 循环
+
+# 人工介入：interrupt 暂停 + Command 恢复 + 必须带记忆
+def 询问是否加糖(state):
+    human = interrupt("")          # 图在这里停住
+    return {"是否加糖": human}
+
+graph = builder.compile(checkpointer=InMemorySaver())   # 必须带记忆
+config = {"configurable": {"thread_id": "1"}}
+graph.invoke(state, config)                    # 跑到 interrupt 暂停
+decision = input("请问您的咖啡需要加糖吗？(是/否):")
+graph.invoke(Command(resume=decision), config) # 喂回决策，继续跑</code></pre>
+      </div>
+
+      <h3 class="blk">图的流式输出：五种镜头</h3>
+      <table class="info">
+        <tr><th>模式</th><th>拍到什么</th><th>大白话</th></tr>
+        <tr><td><code>values</code></td><td>每步之后的全量状态</td><td>整块黑板每步拍张照</td></tr>
+        <tr><td><code>updates</code></td><td>每步的增量变化</td><td>只播「谁刚写了什么」</td></tr>
+        <tr><td><code>messages</code></td><td>LLM 的 token 碎片</td><td>打字机效果（同第⑦章）</td></tr>
+        <tr><td><code>debug</code></td><td>尽可能多的一切</td><td>开发期放大镜</td></tr>
+        <tr><td><code>custom</code></td><td>节点内 writer 手发的信号</td><td>节点里的「对讲机」：进度条 20%→50%→90%</td></tr>
+      </table>
+      <p>有子图时默认只播外层，加 <code>subgraphs=True</code> 才能刺破封装看到里层 —— 返回值多一个 namespace 标注「这条更新来自哪层」。</p>
+
+      <h3 class="blk">六种智能体架构（一张表记牢）</h3>
+      <table class="info">
+        <tr><th>架构</th><th>结构</th><th>大白话</th><th>适用</th></tr>
+        <tr><td>增强型</td><td>In → LLM(+检索/工具/记忆) → Out</td><td>一个人带上三件套</td><td>简单业务</td></tr>
+        <tr><td>链式</td><td>步骤1 → 闸门 → 步骤2 → 步骤3</td><td>流水线 + 中间质检</td><td>流程固定的复杂任务</td></tr>
+        <tr><td><b>路由</b>★</td><td>Router 分诊 → 各自独立的下游</td><td><b>就是第⑤章的 BERT 分诊！</b></td><td>业务独立可扩展</td></tr>
+        <tr><td>并行</td><td>多路同时干 → Aggregator 汇总</td><td>多专家会诊取共识</td><td>多维审核 / 多模型投票</td></tr>
+        <tr><td>协调器</td><td>Orchestrator 分工 → Synthesizer 合成</td><td>导演派活再统一合成</td><td>任务需动态拆解</td></tr>
+        <tr><td>评估优化</td><td>Generator ⇄ Evaluator 循环</td><td>写手↔审稿人到合格为止</td><td>质量要求高的生成</td></tr>
+      </table>
+      <p>你已经会了其中两个：第⑤章的「BERT 分诊 + 三策略」就是<b>路由工作流</b>；第⑦章的 RAGAS 就是把<b>评估优化</b>里的 Evaluator 换成了自动化考官。</p>
+
+      <h3 class="blk">实验台 · 冲咖啡图模拟器</h3>
+      <div class="lab">
+        <div class="lab-head"><span class="lamp"></span><b>单步执行一张真图：并行 + 循环 + 人工介入</b><span>对应 LangGraph 代码，可单步可自动</span></div>
+        <div class="lab-body">
+          <div class="btn-row">
+            <button class="btn primary" id="d8-step" type="button">单步 ▷</button>
+            <button class="btn" id="d8-auto" type="button">自动播放</button>
+            <button class="btn" id="d8-reset" type="button">重置</button>
+            <span class="stage-tag" id="d8-loop"><i>↻</i>烧水 0 次</span>
+          </div>
+          <div id="d8-flow" style="margin-top:14px"></div>
+          <div id="d8-sugar" style="display:none;margin-top:12px">
+            <div class="r-item" style="border-color:var(--gold);background:#FBF6DC">⏸ 人工介入 interrupt：先生您好，请问您的咖啡需要加糖吗？</div>
+            <div class="btn-row" style="margin-top:8px">
+              <button class="btn primary" id="d8-yes" type="button">是（resume=是）</button>
+              <button class="btn" id="d8-no" type="button">否（resume=否）</button>
+            </div>
+          </div>
+          <div id="d8-log" style="margin-top:14px;font-family:var(--mono);font-size:12px;line-height:1.9;max-height:220px;overflow:auto;background:var(--paper-2);border-radius:8px;padding:10px 14px"></div>
+        </div>
+      </div>
+
+      <div class="verify"><b>怎么验证这一步跑通了：</b>① 跑入门计算图：输出 x=6；② 跑循环烧水：从 40 度出发应看到 6 次「烧水节点」日志直到 100 度；③ 跑人工介入：程序在加糖处停住，输入「是」后继续并产出加糖咖啡 —— 把 compile 里的 checkpointer 删掉再跑会报错，体会「中断恢复必须带记忆」；④ 跑 custom 流式：看到进度条信号逐条到达。</div>
+    </div>
+
+    <aside class="side">
+      <div class="note">一张表记牢 LangGraph：节点=函数，边=走向，<b>状态=共享黑板</b>；条件边是「看黑板选下一站」，循环就是「指回自己的那条边」。</div>
+      <div class="note">你其实早就在用图思维了：<b>第⑤章分诊=路由架构</b>，RAGAS=<b>评估优化的自动审稿人</b>，第③④章的漏斗=链式工作流。这门课就是把链升级成图。</div>
+      <div class="note">人工介入三件套缺一不可：<b>interrupt() 节点 + Command(resume) 喂决策 + checkpointer 记忆</b>。少一个，暂停了就醒不来。</div>
+      <div class="anchor">
+        本页目录
+        <a href="#ch-read">① 读 · 文档加载</a>
+        <a href="#ch-split">② 切 · 父子块拆分</a>
+        <a href="#ch-store">③ 存 · 向量化入库</a>
+        <a href="#ch-search">④ 检 · 混合检索</a>
+        <a href="#ch-answer">⑤ 答 · 生成与策略</a>
+        <a href="#ch-cache">⑥ 缓 · 缓存加速</a>
+        <a href="#ch-stream">⑦ 流 · 工程上线</a>
+        <a href="#ch-graph">⑧ 图 · LangGraph</a>
+        <a href="#ch-stream">⑦ 流 · 工程上线</a>
+        <a href="#ch-graph">⑧ 图 · LangGraph</a>
         <a href="#ch-code">全套代码</a>
         <a href="#appendix">附录 · 参数与快问快答</a>
       </div>
@@ -1018,7 +1323,7 @@ print(model1.predict(pairs))
   </div>
   <div class="ch-grid">
     <div class="ch-main prose">
-      <p><span class="term">怎么用这份代码：</span>按阶段 0 → 7 从上往下读，正好是数据流动的顺序：目录里的文件 → 贴好标签的 Document → 带寻亲三件套的子块 → Milvus 里一行行记录 → 一次提问换回的父块。每个阶段标题都注明对应的教学章节，忘了原理随时点回去。</p>
+      <p><span class="term">怎么用这份代码：</span>按阶段 0 → 8 从上往下读，正好是数据流动的顺序：目录里的文件 → 贴好标签的 Document → 带寻亲三件套的子块 → Milvus 里一行行记录 → 一次提问换回的父块。每个阶段标题都注明对应的教学章节，忘了原理随时点回去。</p>
       <div class="flow" style="margin-top:18px">
         <div class="flow-row">
           <div class="flow-node"><small>① 读</small><b>Document×N</b></div>
@@ -1520,6 +1825,44 @@ def _retrieve_with_subqueries(self, query):
         return None</code></pre>
       </div>
 
+      <h3 class="blk">阶段 8 · 对接前端：app.py（<a href="#ch-stream">原理 → 第⑦章</a>）</h3>
+      <div class="codebox">
+        <div class="cb-head"><span class="cb-file">app.py</span>FastAPI + WebSocket 流式接口<button class="cb-copy" type="button">复制</button></div>
+        <pre><code class="lang-py"># pip install fastapi uvicorn；启动：uvicorn app:app --port 8000
+from fastapi import FastAPI, WebSocket
+from starlette.websockets import WebSocketDisconnect
+import json, uuid, asyncio
+
+app = FastAPI(title="问答系统API")
+qa_system = IntegratedQASystem()   # ⑥缓存 + ⑤答 + ④检 的统一出口
+
+@app.websocket("/api/stream")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()                      # 握手
+    try:
+        while True:
+            data = json.loads(await websocket.receive_text())
+            query = data.get("query")
+            session_id = data.get("session_id", str(uuid.uuid4()))
+            # 帧协议三段式：start → token×N → end
+            await websocket.send_json({"type": "start", "session_id": session_id})
+            for token, is_complete in qa_system.query(query, session_id=session_id):
+                if token:
+                    await websocket.send_json({"type": "token", "token": token})
+                if is_complete:
+                    await websocket.send_json({"type": "end", "is_complete": True})
+                    break
+                await asyncio.sleep(0.01)         # 控制推送节奏
+    except WebSocketDisconnect:
+        print("客户端断开")
+    finally:
+        await websocket.close()
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}</code></pre>
+      </div>
+
       <div class="verify"><b>端到端自检清单：</b>① Milvus 服务在线（Attu 能连上）→ ② <code>python main.py</code> 日志依次出现「加载文档 N 个 → 切出子块 M 个 → 已插入或更新 M 个文档」→ ③ Attu 里集合行数 = M，重复跑一次 main 行数不变（MD5 + upsert 幂等）→ ④ 换个不相关问题再查，返回的父块内容明显不相关且得分低 —— 说明排序是真本事，不是摆设。</div>
     </div>
   </div>
@@ -1582,6 +1925,19 @@ def _retrieve_with_subqueries(self, query):
         <details>
           <summary>Redis 已经能挡住高频问题，为什么还要 BM25 + MySQL？</summary>
           <div class="faq-a">Redis 只有「一模一样才命中」，措辞差一个字就漏过去。BM25 + MySQL 住的正是「几乎一样」的那一层 —— 问法和预置答案差几个字，仍能命中 FAQ 免走 RAG。三层各挡一个相似度区间，缺一层漏斗就少一级。</div>
+        </details>
+
+        <details>
+          <summary>回答已经能生成了，为什么还要专门的评估体系？</summary>
+          <div class="faq-a">因为「感觉变好了」不是证据。改了切块大小、换了检索策略、调了提示词 —— 每次改动都要在同一套 QA 集上重跑 RAGAS 对比分数，才能确认是改进还是退步。评估的意义不是打分本身，而是让迭代可自动化、可回滚。</div>
+        </details>
+        <details>
+          <summary>LangChain 和 LangGraph 什么关系？我该学哪个？</summary>
+          <div class="faq-a">同一个团队的两代编排思路：LangChain 把步骤串成链（有向无环，一条道走到黑），LangGraph 把步骤连成图（支持循环、分支、并行、人工介入）。简单任务链够用；流程一旦要「看情况回头」（比如水没开接着烧），就必须上图。两者共用组件生态，学过链再上图很顺。</div>
+        </details>
+        <details>
+          <summary>LangGraph 里没有 while 循环，那循环怎么写？</summary>
+          <div class="faq-a">循环 = 「条件边指回自己」：条件函数看状态返回「水没开」，路由表把「水没开」映射回烧水节点自己 —— 图里有环，执行就会转圈，直到条件放行。这也是它和 Chain 最本质的区别：Chain 的图无环，想回头都不行。</div>
         </details>
       </div>
 
@@ -1648,7 +2004,7 @@ document.querySelectorAll('.codebox').forEach(box=>{
 });
 
 /* ================= 导航 scrollspy ================= */
-const secIds=['ch-read','ch-split','ch-store','ch-search','ch-answer','ch-cache','ch-code'];
+const secIds=['ch-read','ch-split','ch-store','ch-search','ch-answer','ch-cache','ch-stream','ch-graph','ch-code'];
 const navLinks={}; document.querySelectorAll('#nav a').forEach(a=>{
   navLinks[a.getAttribute('href').slice(1)]=a;
 });
@@ -2178,6 +2534,197 @@ $('#d6-reset').addEventListener('click',()=>{ d6Redis={'answer:AI学科的学费
   $('#d6-chips').appendChild(c);
 });
 d6Run();
+</script>
+
+<script>
+/* ================= Demo7 上线体验台 ================= */
+const D7_ANSWER='根据提供的文档：AI 学科课程共 6 个阶段 —— Python 基础、机器学习、深度学习、NLP 与大模型、RAG 实战、毕业项目。学费 19800 元，支持 6 期免息分期，报名后 7 天内可全额退款。';
+let d7Timer=null;
+function d7ClearAll(){
+  if(d7Timer) clearInterval(d7Timer);
+  $('#d7-typed').textContent='';
+  $('#d7-frames').innerHTML='';
+  $('#d7-hist').innerHTML='';
+  $('#d7-ans2').innerHTML='';
+}
+$('#d7-stream').addEventListener('click',()=>{
+  d7ClearAll();
+  const toks=D7_ANSWER.match(/[一-龥]{1,2}|[a-zA-Z0-9]+|./g)||[];
+  let i=0;
+  $('#d7-frames').innerHTML='<div>→ {"type":"start","session_id":"demo"}  [ws 连接建立]</div>';
+  d7Timer=setInterval(()=>{
+    if(i>=toks.length){
+      clearInterval(d7Timer); d7Timer=null;
+      $('#d7-frames').innerHTML+='<div>← {"type":"end","is_complete":true}  [连接关闭]</div>';
+      $('#d7-frames').scrollTop=1e6;
+      return;
+    }
+    const t=toks[i++];
+    $('#d7-typed').textContent+=t;
+    $('#d7-frames').innerHTML+='<div>← {"type":"token","token":"'+esc(t)+'"}</div>';
+    $('#d7-frames').innerHTML=$('#d7-frames').innerHTML.slice(0,6000);
+    $('#d7-frames').scrollTop=1e6;
+  },70);
+});
+$('#d7-clear').addEventListener('click',d7ClearAll);
+let d7Turn1=false, d7H1='AI学科课程共 6 个阶段：Python 基础 → 机器学习 → 深度学习 → NLP 与大模型 → RAG 实战 → 毕业项目。';
+$('#d7-turn1').addEventListener('click',()=>{
+  d7Turn1=true;
+  $('#d7-hist').innerHTML='<div style="font-family:var(--mono);font-size:12px;color:var(--ink-soft)">会话表 session_id=demo → Q: AI学科有什么课程？ A: '+esc(d7H1)+'</div>';
+  $('#d7-ans2').innerHTML='<div class="hint">第 1 问已写入会话表。现在点「第 2 问」试试记忆的威力。</div>';
+});
+$('#d7-turn2').addEventListener('click',()=>{
+  if(!d7Turn1){ $('#d7-ans2').innerHTML='<div class="hint">先点「第 1 问」建立会话。</div>'; return; }
+  const mem=$('#d7-mem').checked;
+  const hist=mem?('Q: AI学科有什么课程？ A: '+d7H1):'（空）';
+  const ans=mem
+    ?'AI学科全科学费 19800 元，支持 6 期免息分期。（「它」= 第 1 问里的 AI学科 —— 靠 {history} 槽解析）'
+    :'「它」指代不明，无法确定询问哪个学科的学费。信息不足，无法回答，请联系人工客服，电话：400-800-1234。';
+  $('#d7-ans2').innerHTML=
+    '<div class="r-item" style="font-size:13px">提示词 {history} 槽内容：'+esc(hist)+'</div>'+
+    '<div class="to-parent" style="border-color:var(--green)">'+esc(ans)+'</div>';
+});
+
+/* ================= Demo8 冲咖啡图模拟器 ================= */
+const D8_NODES=[
+  {id:'start',label:'start'},
+  {id:'grind',label:'磨咖啡豆'},
+  {id:'boil',label:'烧水'},
+  {id:'brew',label:'冲咖啡'},
+  {id:'ask',label:'询问加糖 ⏸'},
+  {id:'sugar',label:'加糖'},
+  {id:'end',label:'end'}
+];
+let d8;
+function d8Init(){
+  d8={water:40,solid:'咖啡豆',product:'凉水',sugar:'',step:0,boiled:0,grindDone:false,boilDone:false,phase:'idle',autoTimer:null};
+}
+function d8Flow(cur){
+  const chip=(id,extra)=>{
+    const n=D8_NODES.find(x=>x.id===id);
+    const on=(cur===id)?' style="border-color:var(--red);background:var(--red-wash)"':'';
+    return '<span class="flow-node'+(id==='start'||id==='end'?' flow-store':'')+'"'+on+'><b>'+n.label+'</b>'+(extra||'')+'</span>';
+  };
+  let html=chip('start')+'<span class="flow-arr">→</span>';
+  html+=chip('grind');
+  html+='<span class="flow-arr">⇉</span>';
+  html+=chip('boil', d8.boiled>0?'<small>第 '+d8.boiled+' 次</small>':'<small>循环↻</small>');
+  html+='<span class="flow-arr">→</span>';
+  html+=chip('brew');
+  html+='<span class="flow-arr">→</span>';
+  html+=chip('ask');
+  html+='<span class="flow-arr">→(是)</span>';
+  html+=chip('sugar');
+  html+='<span class="flow-arr">→</span>';
+  html+=chip('end');
+  $('#d8-flow').innerHTML=html;
+  $('#d8-loop').innerHTML='<i>↻</i>烧水 '+d8.boiled+' 次';
+}
+function d8Log(msg,color){
+  const line='<div'+(color?' style="color:'+color+'"':'')+'>'+msg+'</div>';
+  const el=$('#d8-log');
+  el.innerHTML+=line;
+  el.scrollTop=1e6;
+}
+function d8State(){
+  return 'State: {水温: '+d8.water+', 咖啡固体: '+d8.solid+', 产物: '+d8.product+', 是否加糖: '+(d8.sugar||'—')+'}';
+}
+function d8Step(){
+  if(d8.phase==='done') return;
+  d8.step++;
+  if(d8.phase==='ask_wait'){
+    d8Log('⏸ 图暂停在 interrupt，等你点 是/否 —— 这就是 Command(resume=…)','var(--red-deep)');
+    return;
+  }
+  let msg='';
+  if(d8.phase==='idle'){
+    d8.phase='parallel';
+    msg='START 同时发出两个并行分支：烧水 ∥ 磨咖啡豆';
+  }else if(d8.phase==='parallel'){
+    if(!d8.grindDone){
+      d8.solid='咖啡粉'; d8.grindDone=true; d8.phase='boil_loop';
+      msg='【磨咖啡豆】咖啡固体: 咖啡豆 → 咖啡粉（并行分支 A 完成）';
+    }else{
+      d8.phase='boil_loop';
+      msg='（并行分支 B 接力）';
+    }
+  }else if(d8.phase==='boil_loop'){
+    d8.water=Math.min(100,d8.water+10);
+    d8.boiled++;
+    if(d8.water>=100){
+      d8.boilDone=true; d8.phase='brew';
+      msg='【烧水·第'+d8.boiled+'次】水温 → 100（水烧开了 → 条件边放行去冲咖啡）';
+      d8Log(d8.step+'. '+msg,'var(--green)');
+      d8Render();
+      return;
+    }
+    msg='【烧水·第'+d8.boiled+'次】水温 '+(d8.water-10)+'→'+d8.water+'（水没开 → 条件边指回烧水节点 ↻）';
+  }else if(d8.phase==='brew'){
+    d8.phase='ask_wait';
+    $('#d8-sugar').style.display='block';
+    msg='【冲咖啡】产物 → 咖啡（并行分支汇合后执行）。下一节点调 interrupt() → 图暂停';
+  }
+  if(msg) d8Log(d8.step+'. '+msg);
+  d8Render();
+}
+function d8Render(){
+  const map={parallel:'start',boil_loop:'boil',brew:'brew',ask:'ask',sugar:'sugar',resume_no:'end',end:'end',idle:'start',ask_wait:'ask'};
+  const cur=map[d8.phase]||'';
+  d8Flow(cur);
+  d8Log(d8State(),'var(--ink-soft)');
+}
+function d8Flow(cur){
+  const chip=(id,extra)=>{
+    const n=D8_NODES.find(x=>x.id===id);
+    const on=(cur===id)?' style="border-color:var(--red);background:var(--red-wash)"':'';
+    return '<span class="flow-node'+(id==='start'||id==='end'?' flow-store':'')+'"'+on+'><b>'+n.label+'</b>'+(extra||'')+'</span>';
+  };
+  let html=chip('start')+'<span class="flow-arr">→</span>';
+  html+=chip('grind');
+  html+='<span class="flow-arr">⇉</span>';
+  html+=chip('boil', d8.boiled>0?'<small>第 '+d8.boiled+' 次</small>':'<small>循环↻</small>');
+  html+='<span class="flow-arr">→</span>';
+  html+=chip('brew');
+  html+='<span class="flow-arr">→</span>';
+  html+=chip('ask');
+  html+='<span class="flow-arr">→(是)</span>';
+  html+=chip('sugar');
+  html+='<span class="flow-arr">→</span>';
+  html+=chip('end');
+  $('#d8-flow').innerHTML=html;
+  $('#d8-loop').innerHTML='<i>↻</i>烧水 '+d8.boiled+' 次';
+}
+$('#d8-step').addEventListener('click',d8Step);
+$('#d8-auto').addEventListener('click',()=>{
+  if(d8.autoTimer){ clearInterval(d8.autoTimer); d8.autoTimer=null; $('#d8-auto').textContent='自动播放'; return; }
+  $('#d8-auto').textContent='暂停';
+  d8.autoTimer=setInterval(()=>{
+    if(d8.phase==='ask_wait'||d8.phase==='done'){ clearInterval(d8.autoTimer); d8.autoTimer=null; $('#d8-auto').textContent='自动播放'; return; }
+    d8Step();
+  },900);
+});
+$('#d8-yes').addEventListener('click',()=>{
+  if(d8.phase!=='ask_wait') return;
+  $('#d8-sugar').style.display='none';
+  d8.sugar='是'; d8.product='加糖咖啡'; d8.phase='done';
+  d8Log('Command(resume=是) → 【加糖】产物 → 加糖咖啡 → __end__','var(--red-deep)');
+  d8Render();
+});
+$('#d8-no').addEventListener('click',()=>{
+  if(d8.phase!=='ask_wait') return;
+  $('#d8-sugar').style.display='none';
+  d8.sugar='否'; d8.phase='done';
+  d8Log('Command(resume=否) → 跳过加糖 → __end__','var(--red-deep)');
+  d8Render();
+});
+$('#d8-reset').addEventListener('click',()=>{
+  if(d8.autoTimer){ clearInterval(d8.autoTimer); d8.autoTimer=null; $('#d8-auto').textContent='自动播放'; }
+  d8Init(); $('#d8-log').innerHTML='';
+  d8Log('图已重置：初始 State {水温:40, 咖啡固体:咖啡豆, 产物:凉水}','#8B9098');
+  d8Render();
+});
+d8Init(); d8Render();
+d8Log('LangGraph 咖啡图就绪 —— 点「单步」看 State 怎么在节点间流动','#8B9098');
 </script>
 
 </body>
