@@ -278,6 +278,8 @@ footer .note{margin-top:8px}
       <a href="#ch-split"><b>切</b>父子块</a><span class="arr">→</span>
       <a href="#ch-store"><b>存</b>向量化</a><span class="arr">→</span>
       <a href="#ch-search"><b>检</b>混合检索</a><span class="arr">→</span>
+      <a href="#ch-answer"><b>答</b>生成</a><span class="arr">→</span>
+      <a href="#ch-cache"><b>缓</b>缓存</a><span class="arr">→</span>
       <a href="#ch-code"><b>码</b>全套代码</a>
     </nav>
   </div>
@@ -308,9 +310,11 @@ footer .note{margin-top:8px}
       <span class="flow-tag">在线问答</span>
       <div class="flow-node"><small>「如何保养车辆？」</small><b>用户提问</b></div>
       <span class="flow-arr">→</span>
+      <a class="flow-node" href="#ch-cache" style="text-decoration:none;color:inherit"><small>常见问题秒回，未命中才往下</small><b>⑥ 缓</b></a>
+      <span class="flow-arr">→</span>
       <a class="flow-node hot" href="#ch-search" style="text-decoration:none;color:inherit"><small>双向量两路查 + 融合 + 重排</small><b>④ 检</b></a>
       <span class="flow-arr">→</span>
-      <div class="flow-node"><small>Top-M 个父块塞进提示词</small><b>大模型作答</b></div>
+      <a class="flow-node hot" href="#ch-answer" style="text-decoration:none;color:inherit"><small>分类路由 → 策略检索 → 拼提示词</small><b>⑤ 答</b></a>
     </div>
   </div>
 </section>
@@ -414,7 +418,9 @@ def load_documents_from_directory(directory_path: str) -> [Document]:
         <a href="#ch-split">② 切 · 父子块拆分</a>
         <a href="#ch-store">③ 存 · 向量化入库</a>
         <a href="#ch-search">④ 检 · 混合检索</a>
-        <a href="#ch-code">⑤ 全套代码</a>
+        <a href="#ch-answer">⑤ 答 · 生成与策略</a>
+        <a href="#ch-cache">⑥ 缓 · 缓存加速</a>
+        <a href="#ch-code">全套代码</a>
         <a href="#appendix">附录 · 参数与快问快答</a>
       </div>
     </aside>
@@ -566,7 +572,9 @@ def _split_parent_then_child(doc, doc_index, parent_splitter, child_splitter):
         <a href="#ch-split">② 切 · 父子块拆分</a>
         <a href="#ch-store">③ 存 · 向量化入库</a>
         <a href="#ch-search">④ 检 · 混合检索</a>
-        <a href="#ch-code">⑤ 全套代码</a>
+        <a href="#ch-answer">⑤ 答 · 生成与策略</a>
+        <a href="#ch-cache">⑥ 缓 · 缓存加速</a>
+        <a href="#ch-code">全套代码</a>
         <a href="#appendix">附录 · 参数与快问快答</a>
       </div>
     </aside>
@@ -723,7 +731,9 @@ def _split_parent_then_child(doc, doc_index, parent_splitter, child_splitter):
         <a href="#ch-split">② 切 · 父子块拆分</a>
         <a href="#ch-store">③ 存 · 向量化入库</a>
         <a href="#ch-search">④ 检 · 混合检索</a>
-        <a href="#ch-code">⑤ 全套代码</a>
+        <a href="#ch-answer">⑤ 答 · 生成与策略</a>
+        <a href="#ch-cache">⑥ 缓 · 缓存加速</a>
+        <a href="#ch-code">全套代码</a>
         <a href="#appendix">附录 · 参数与快问快答</a>
       </div>
     </aside>
@@ -869,12 +879,136 @@ print(model1.predict(pairs))
         <a href="#ch-split">② 切 · 父子块拆分</a>
         <a href="#ch-store">③ 存 · 向量化入库</a>
         <a href="#ch-search">④ 检 · 混合检索</a>
-        <a href="#ch-code">⑤ 全套代码</a>
+        <a href="#ch-answer">⑤ 答 · 生成与策略</a>
+        <a href="#ch-cache">⑥ 缓 · 缓存加速</a>
+        <a href="#ch-code">全套代码</a>
         <a href="#appendix">附录 · 参数与快问快答</a>
       </div>
     </aside>
   </div>
 </section>
+
+<!-- ============ 第 5 步 答 ============ -->
+<section class="chapter" id="ch-answer">
+  <div class="ch-head">
+    <span class="seal">答</span>
+    <div><h2>生成与策略</h2><div class="sub">分诊台 → 查资料 → 拼提示词 → 大模型作答</div></div>
+  </div>
+  <div class="ch-grid">
+    <div class="ch-main prose">
+      <p><span class="term">这一步在干嘛：</span>问题先过一个小 BERT 分类器，分成<b>通用知识</b>和<b>专业知识</b>两类：通用问题直接拼提示词问大模型；专业问题先进 Milvus 检索，把父块资料和问题一起拼进提示词再问。专业问题还会再选检索策略：直接检索 / 假设问题检索（HyDE）/ 子查询检索。</p>
+      <p><span class="term">为什么要分类：</span>「北京今天天气怎么样」也去查教材向量库纯属浪费 —— 检索是整条链路里最贵的一步。分诊台用毫秒级的小模型拦住不需要查资料的问题。</p>
+
+      <h3 class="blk">大白话：医院分诊台</h3>
+      <p>进医院先过护士分诊：感冒发烧（通用知识）直接去普通门诊；专科问题（专业知识）才挂号进专科诊室，而且先翻你的病历（检索资料），医生看完病历再开口（大模型照资料作答）。分诊的是<b>便宜的小护士</b>（BERT 小模型，毫秒级），看病的是<b>贵的大专家</b>（大模型）—— 让专家只干专家该干的事。</p>
+      <p>提示词模板本身是个<b>填空题</b>：</p>
+      <table class="info">
+        <tr><th>模板槽位</th><th>填什么</th><th>大白话</th></tr>
+        <tr><td><code>角色</code></td><td>「你是一个智能助手……」</td><td>上岗前先交代规矩</td></tr>
+        <tr><td><code>context</code></td><td>检索到的父块全文（或「通用知识」）</td><td>发给大模型的「参考资料」</td></tr>
+        <tr><td><code>question</code></td><td>用户原话</td><td>考题</td></tr>
+        <tr><td><code>phone</code></td><td>客服电话</td><td>兜底话术：答不了就转人工，别瞎编</td></tr>
+      </table>
+
+      <h3 class="blk">三种检索策略，大白话各一句</h3>
+      <p><b>直接检索</b>：问法直白（「学费是多少」）就拿原话去查。<b>假设问题检索（HyDE）</b>：问得太抽象（「AI 在教育领域的应用」），向量库里没有一句话跟它「长得像」—— 先让大模型<b>猜一个假设答案</b>，拿这个答案去查。妙处在于：答案和文档说的是同一件事、用词相近，比抽象的问题好匹配。<b>子查询检索</b>：复合问题（「比较 Java 和 Python」）一次查不完整 —— 先拆成几个小问题分别查，结果去重合并。</p>
+      <p>两个细节值得记：<b>策略选择时 temperature=0.1</b>（要答案稳定，别发挥），<b>最终回答时 0.5</b>（要自然流畅）；策略选择失败的兜底是「直接检索」—— 系统任何一环出错都要有退路，不能卡死用户。</p>
+
+      <h3 class="blk">实验台 · 分诊与拼提示词</h3>
+      <div class="lab">
+        <div class="lab-head"><span class="lamp"></span><b>一个问题走完：分类 → 策略 → 检索 → 拼提示词 → 回答</b><span>分类与回答为教学模拟，流程与代码一致</span></div>
+        <div class="lab-body">
+          <div class="search-io">
+            <input id="d5-input" type="text" value="AI学科的课程目录是怎样的" placeholder="输入一个问题">
+            <button class="btn primary" id="d5-go" type="button">开始分诊</button>
+          </div>
+          <div class="chips" style="margin-top:10px" id="d5-chips"></div>
+          <div id="d5-out" style="margin-top:16px"></div>
+        </div>
+      </div>
+
+      <div class="verify"><b>怎么验证这一步跑通了：</b>① 跑 <code>query_classifier.py</code> 的 <code>__main__</code>：两条测试问题应分别输出「专业咨询」「通用知识」；② 跑 <code>rag_system.py</code>，看日志里「发送大模型的提示词」—— 专业问题时 context 槽里应是检索到的父块全文；③ 换成「今天天气怎么样」再看日志：context 应是「通用知识」，且没触发 Milvus 检索。</div>
+    </div>
+
+    <aside class="side">
+      <div class="note">分诊台是<b>省钱闸门</b>：BERT 小模型毫秒级、几乎免费，把三成不需要检索的问题拦在闸门外，大模型和向量库只服务真正需要资料的专科问题。</div>
+      <div class="note">HyDE 的直觉：<b>问题和文档是两种文体，答案和文档才是同一种文体</b>。拿「猜出来的答案」当检索词，等于先把问题翻译成文档的语言再去找。</div>
+      <div class="note">提示词里的客服电话是<b>产品思维</b>：AI 承认「信息不足」比硬编一个答案体面得多 —— 兜底话术是模板的一部分，不是临时加的。</div>
+      <div class="anchor">
+        本页目录
+        <a href="#ch-read">① 读 · 文档加载</a>
+        <a href="#ch-split">② 切 · 父子块拆分</a>
+        <a href="#ch-store">③ 存 · 向量化入库</a>
+        <a href="#ch-search">④ 检 · 混合检索</a>
+        <a href="#ch-answer">⑤ 答 · 生成与策略</a>
+        <a href="#ch-cache">⑥ 缓 · 缓存加速</a>
+        <a href="#ch-code">全套代码</a>
+        <a href="#appendix">附录 · 参数与快问快答</a>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ 第 6 步 缓 ============ -->
+<section class="chapter" id="ch-cache">
+  <div class="ch-head">
+    <span class="seal">缓</span>
+    <div><h2>缓存加速</h2><div class="sub">常见问题根本不该进 RAG —— Redis 与 BM25 三级漏斗</div></div>
+  </div>
+  <div class="ch-grid">
+    <div class="ch-main prose">
+      <p><span class="term">这一步在干嘛：</span>系统跑一段时间后会攒下常见问题（FAQ）。把它们和答案存进 MySQL，热门的再放 Redis。新问题来了先走两级快速通道：<b>① Redis 精确命中</b>直接秒回；<b>② 没命中，用 BM25 算法</b>和 MySQL 里的历史问题算相关度，最高分 ≥ 0.9 就直接返回那条答案；<b>③ 都不行</b>才进前面学的 RAG 全流程。</p>
+      <p><span class="term">为什么要这一步：</span>在线系统 80% 的流量往往是 20% 的常见问题。这些问题的答案早就有了，再跑一遍「向量检索 + 重排 + 大模型」纯烧钱。漏斗思想再次登场：<b>便宜的挡在前面，贵的只在真正需要时出场</b>。</p>
+
+      <h3 class="blk">大白话：客服的三本册子</h3>
+      <p><b>便利贴墙（Redis）</b>：最高频的问题答案直接贴墙上，来一个人对一眼，秒回。<b>FAQ 手册（MySQL + BM25）</b>：墙上的便签不全，但有一本按关键词索引的手册 —— 来的问题跟手册里某条「几乎一样」，翻出来照着念。<b>全院会诊（RAG）</b>：便签墙和手册都解决不了，才走完整流程：查资料库 → 精排 → 让专家现场作答。</p>
+
+      <h3 class="blk">BM25 大白话：会打分的关键词匹配</h3>
+      <p>BM25 是「.ctrl+F 搜索的聪明版」：把问题和历史问题都分词，按<b>关键词重合</b>打分，但带三条常识修正 —— ① 查询词在某文档里出现得越多，该文档分越高；② 但一个<b>全库到处都有的词</b>（的、是、什么）几乎不加分类（IDF 折扣）；③ <b>文档越长越吃亏</b>（长文档容易「碰巧」包含关键词，要稀释）。查询和「关联子查询的执行顺序是什么」几乎逐词重合的文档，分数自然鹤立鸡群。</p>
+      <p>分数还要过一遍 <b>softmax 归一化</b>：把一把参差不齐的分数压成「总和为 1 的百分比」，这才好定 0.9 的阈值 —— 意思是「最高票的文档要有九成把握才算命中」。定这么高是产品决策：<b>FAQ 答错比答不出来更伤人</b>，宁可放去走 RAG，也不把相近问题的答案张冠李戴。</p>
+
+      <h3 class="blk">实验台 · 三级漏斗台</h3>
+      <div class="lab">
+        <div class="lab-head"><span class="lamp"></span><b>Redis → BM25/MySQL → RAG，一级级看它怎么挡</b><span>BM25 分数由页面实时真算（jieba 分词用迷你词典模拟）</span></div>
+        <div class="lab-body">
+          <div class="search-io">
+            <input id="d6-input" type="text" value="关联子查询的执行顺序" placeholder="输入一个问题">
+            <button class="btn primary" id="d6-go" type="button">过漏斗</button>
+          </div>
+          <div class="chips" style="margin-top:10px" id="d6-chips"></div>
+          <div id="d6-out" style="margin-top:16px"></div>
+          <p class="hint">试试把阈值调到 0.5 再查「关联子查询的执行顺序」的变体 —— 观察「几乎命中」和「真命中」的差异；再点「重置 Redis」后查学费问题，看写入缓存的过程。</p>
+          <div class="wctl">
+            <span>BM25 命中阈值</span>
+            <span class="wv"><b id="d6-th">0.9</b></span>
+            <input type="range" id="d6-slider" min="0.5" max="0.99" step="0.01" value="0.9" aria-label="BM25 命中阈值">
+            <button class="btn" id="d6-reset" type="button">重置 Redis</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="verify"><b>怎么验证这一步跑通了：</b>① 跑 <code>bm25_search.py</code> 查「关联子查询的执行顺序是什么」—— 日志应显示 softmax 分数 ≥ 0.9 并返回 MySQL 答案；② 先查一次（走 RAG），再查一次同样的问题 —— 第二次日志直接从 Redis 命中；③ 查一个库里没有的冷门问题 —— 分数低于阈值，进入 RAG 分支。另注意 BM25 的盲区：查「子查询先跑还是外层先跑」（换了说法）分数会暴跌 —— 关键词算法认词不认义，这正是第③④步向量检索的强项。</div>
+    </div>
+
+    <aside class="side">
+      <div class="note">三级漏斗各自的活：<b>Redis 管「一模一样」，BM25 管「几乎一样」，RAG 管「说法不一样但意思一样」</b>。一层比一层聪明，也一层比一层贵。</div>
+      <div class="note">BM25 和向量检索不是竞争关系：<b>BM25 认词不认义，向量认义不认词</b>。常见问题用 BM25 筛（快、准、免费），长尾问题用向量兜（换说法也能中）。</div>
+      <div class="note">第一次没命中而走 RAG 的问题，之后可以人工筛出来补进 FAQ —— <b>系统越用越快</b>，这是缓存层最值钱的地方。</div>
+      <div class="anchor">
+        本页目录
+        <a href="#ch-read">① 读 · 文档加载</a>
+        <a href="#ch-split">② 切 · 父子块拆分</a>
+        <a href="#ch-store">③ 存 · 向量化入库</a>
+        <a href="#ch-search">④ 检 · 混合检索</a>
+        <a href="#ch-answer">⑤ 答 · 生成与策略</a>
+        <a href="#ch-cache">⑥ 缓 · 缓存加速</a>
+        <a href="#ch-code">全套代码</a>
+        <a href="#appendix">附录 · 参数与快问快答</a>
+      </div>
+    </aside>
+  </div>
+</section>
+
 
 <!-- ============ 全套代码 ============ -->
 <section class="chapter" id="ch-code">
@@ -884,7 +1018,7 @@ print(model1.predict(pairs))
   </div>
   <div class="ch-grid">
     <div class="ch-main prose">
-      <p><span class="term">怎么用这份代码：</span>按阶段 0 → 5 从上往下读，正好是数据流动的顺序：目录里的文件 → 贴好标签的 Document → 带寻亲三件套的子块 → Milvus 里一行行记录 → 一次提问换回的父块。每个阶段标题都注明对应的教学章节，忘了原理随时点回去。</p>
+      <p><span class="term">怎么用这份代码：</span>按阶段 0 → 7 从上往下读，正好是数据流动的顺序：目录里的文件 → 贴好标签的 Document → 带寻亲三件套的子块 → Milvus 里一行行记录 → 一次提问换回的父块。每个阶段标题都注明对应的教学章节，忘了原理随时点回去。</p>
       <div class="flow" style="margin-top:18px">
         <div class="flow-row">
           <div class="flow-node"><small>① 读</small><b>Document×N</b></div>
@@ -896,7 +1030,7 @@ print(model1.predict(pairs))
           <div class="flow-node"><small>④ 检</small><b>父块 Top-M</b></div>
           <span class="flow-arr">→</span>
           <span class="flow-arr">→</span>
-          <div class="flow-node"><small>下一课</small><b>大模型作答</b></div>
+          <a class="flow-node hot" href="#ch-answer" style="text-decoration:none;color:inherit"><small>⑤ 答</small><b>大模型作答</b></a>
         </div>
       </div>
 
@@ -1266,6 +1400,126 @@ if __name__ == '__main__':
     # ⑤ 下一课「生成」：把 parent_docs 拼进提示词，交给大模型作答</code></pre>
       </div>
 
+      <h3 class="blk">阶段 6 · 答：classifier + prompts（<a href="#ch-answer">原理 → 第⑤章</a>）</h3>
+      <div class="codebox">
+        <div class="cb-head"><span class="cb-file">rag_qa/core/query_classifier.py + prompts.py</span>BERT 分诊 + 提示词模板<button class="cb-copy" type="button">复制</button></div>
+        <pre><code class="lang-py"># rag_qa/core/query_classifier.py —— 分诊小护士（自训练 BERT）
+import torch
+from transformers import BertTokenizer, BertForSequenceClassification
+
+class QueryClassifier:
+    def __init__(self, model_dir):
+        if not os.path.exists(model_dir):
+            raise FileNotFoundError(f"模型目录不存在: {model_dir}")
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.tokenizer = BertTokenizer.from_pretrained(model_dir)          # 分词器
+        self.model = BertForSequenceClassification.from_pretrained(model_dir)
+        self.model.to(self.device)
+        self.model.eval()   # 评估模式：关掉 dropout，输出稳定
+
+    def predict_category(self, query):
+        if not query or not isinstance(query, str):
+            return "通用知识"                     # 任何异常输入都兜底为通用
+        try:
+            encoding = self.tokenizer(query, truncation=True, padding=True,
+                                      max_length=128, return_tensors="pt")
+            encoding = {k: v.to(self.device) for k, v in encoding.items()}
+            with torch.no_grad():                 # 推理不需要梯度
+                outputs = self.model(**encoding)
+                prediction = torch.argmax(outputs.logits, dim=1).item()
+            return "专业咨询" if prediction == 1 else "通用知识"
+        except Exception:
+            return "通用知识"                     # 出错也兜底，绝不卡死用户
+
+# ── prompts.py 里的四个模板（详见第⑤章讲解）──
+# rag_prompt:            角色 + 上下文{context} + 问题{question} + 兜底话术{phone}
+# strategy_select_prompt: 给大模型三个策略的说明，让它选一个名字返回
+# hyde_prompt:           「假设你是用户……生成一个简短的假设答案」
+# subquery_prompt:       「将以下复杂查询分解为多个简单子查询，每行一个」</code></pre>
+      </div>
+      <div class="codebox">
+        <div class="cb-head"><span class="cb-file">rag_qa/core/rag_system.py + strategy_selector.py</span>主流程 + 三策略检索<button class="cb-copy" type="button">复制</button></div>
+        <pre><code class="lang-py"># rag_qa/core/rag_system.py —— 主流程
+class RAGSystem:
+    def __init__(self):
+        self.classifier = QueryClassifier("models/bert_results")
+        self.vector_store = VectorStore()
+        self.client = OpenAI(api_key=conf.DASHSCOPE_API_KEY,
+                             base_url=conf.DASHSCOPE_BASE_URL)
+
+    def generate_answer(self, query, source_filter=None):
+        query_category = self.classifier.predict_category(query)   # 1) 分诊
+        if query_category == "通用知识":
+            context = "通用知识"                                    # 2a) 不检索
+        else:
+            documents = ss.strategy_select(query, source_filter)    # 2b) 策略检索
+            context = "\n\n".join(d.metadata["parent_content"] for d in documents)
+        prompt = RAGPrompts.rag_prompt().format(                    # 3) 拼提示词
+            context=context, question=query, phone=conf.CUSTOMER_SERVICE_PHONE)
+        try:                                                        # 4) 调大模型
+            completion = self.client.chat.completions.create(
+                model=conf.LLM_MODEL,
+                messages=[{"role": "system", "content": "你是一个有用的助手"},
+                          {"role": "user", "content": prompt}],
+                temperature=0.5)      # 回答用 0.5；策略选择用 0.1（要稳）
+            return completion.choices[0].message.content
+        except Exception:
+            return f"抱歉，处理您的通用知识问题时出错。请联系人工客服：{conf.CUSTOMER_SERVICE_PHONE}"
+
+# ── strategy_selector.py 三个策略的核心（每个都是「先生成检索词，再检索」）──
+def _retrieve_direct(query):
+    return self.vector_store.hybrid_search_with_reranker(query, k=conf.RETRIEVAL_K)
+
+def _retrieve_with_hyde(query):
+    hypo_answer = self.call_dashscope(RAGPrompts.hyde_prompt().format(query=query))
+    return self.vector_store.hybrid_search_with_reranker(hypo_answer, k=conf.RETRIEVAL_K)
+
+def _retrieve_with_subqueries(self, query):
+    text = self.call_dashscope(RAGPrompts.subquery_prompt().format(query=query))
+    subqueries = [q.strip() for q in text.split("\n") if q.strip()]
+    all_docs = []
+    for sub_q in subqueries:   # 每个子查询分别检索
+        all_docs.extend(self.vector_store.hybrid_search_with_reranker(sub_q, k=conf.RETRIEVAL_K))
+    # 按正文去重合并
+    return list({doc.page_content: doc for doc in all_docs}.values())</code></pre>
+      </div>
+
+      <h3 class="blk">阶段 7 · 缓：bm25_search.py（<a href="#ch-cache">原理 → 第⑥章</a>）</h3>
+      <div class="codebox">
+        <div class="cb-head"><span class="cb-file">rag_qa/core/bm25_search.py</span>Redis → BM25/MySQL → RAG 三级漏斗<button class="cb-copy" type="button">复制</button></div>
+        <pre><code class="lang-py">class BM25Search:
+    def __init__(self):
+        self.redis_client = RedisClient()
+        self.mysql_client = MySQLClient()
+        # 启动时从 MySQL 拉全部 FAQ 问题，分词后建 BM25 索引
+        self.original_questions = self.mysql_client.fetch_questions()
+        if not self.original_questions:
+            logger.warning("未加载到问题")
+            return
+        tokenized = [jieba.lcut(q[0]) for q in self.original_questions]
+        self.bm25 = BM25Okapi(tokenized)
+
+    def search(self, query, threshold=0.9):
+        # ① Redis：一模一样的问题，秒回
+        cached = self.redis_client.get_answer(query)
+        if cached:
+            return cached
+
+        # ② BM25：和 FAQ 手册里的问题算相关度，softmax 后过阈值
+        scores = self.bm25.get_scores(jieba.lcut(query))
+        softmax_scores = self._softmax(scores)
+        best_idx = softmax_scores.argmax()
+        if softmax_scores[best_idx] >= threshold:
+            original_question = self.original_questions[best_idx]
+            answer = self.mysql_client.fetch_answer(original_question)
+            if answer:
+                self.redis_client.set_data(f"answer:{query}", answer)  # 写回缓存
+                return answer
+
+        # ③ 都没接住 → 返回 None，主流程会转 RAG（第④⑤步）
+        return None</code></pre>
+      </div>
+
       <div class="verify"><b>端到端自检清单：</b>① Milvus 服务在线（Attu 能连上）→ ② <code>python main.py</code> 日志依次出现「加载文档 N 个 → 切出子块 M 个 → 已插入或更新 M 个文档」→ ③ Attu 里集合行数 = M，重复跑一次 main 行数不变（MD5 + upsert 幂等）→ ④ 换个不相关问题再查，返回的父块内容明显不相关且得分低 —— 说明排序是真本事，不是摆设。</div>
     </div>
   </div>
@@ -1316,6 +1570,19 @@ if __name__ == '__main__':
           <summary>检索返回了资料，大模型就一定答对吗？</summary>
           <div class="faq-a">不一定。检索只是「找到可能相关的原文」：资料找错了、或找对了但大模型没照着读，都会翻车。所以工程上要同时看两段指标 —— 检索准不准（命中率、排序质量）和生成好不好（是否忠于资料）。这也是为什么本课每个实验台都让你亲眼看分数和排序，而不是只看最终答案。</div>
         </details>
+
+        <details>
+          <summary>分诊为什么用自己训练的小 BERT，不用大模型？</summary>
+          <div class="faq-a">分诊是高频、简单、单薄的判断 —— 小模型毫秒级、几乎零成本就能干好；大模型又贵又慢，让它干这个是杀鸡用牛刀。工程铁律：能力匹配就好，别为小事请专家。同理 BM25 能挡住的问题也别动用向量检索。</div>
+        </details>
+        <details>
+          <summary>BM25 和向量检索不是重复了吗？留一个不行吗？</summary>
+          <div class="faq-a">不重复，它们性格互补：BM25 认词不认义（换个说法就查不到，但极快极便宜），向量认义不认词（改写也能中，但每条都要算向量）。缓存层用 BM25 是因为 FAQ 场景「来问的人措辞高度相似」，关键词命中率高；长尾问题才交给向量 + 重排。</div>
+        </details>
+        <details>
+          <summary>Redis 已经能挡住高频问题，为什么还要 BM25 + MySQL？</summary>
+          <div class="faq-a">Redis 只有「一模一样才命中」，措辞差一个字就漏过去。BM25 + MySQL 住的正是「几乎一样」的那一层 —— 问法和预置答案差几个字，仍能命中 FAQ 免走 RAG。三层各挡一个相似度区间，缺一层漏斗就少一级。</div>
+        </details>
       </div>
 
       <div class="verify" style="margin-top:26px"><b>整条链路的自检顺序：</b>① <code>print(len(documents))</code> 有货 → ② <code>print(len(chunks))</code> 且子块带 parent_id → ③ Milvus 行数对得上且重复入库不重复计数 → ④ 相关问题能召回正确父块、无关问题分数明显偏低。四关都过，存储与检索就算验收，可以进入「生成」环节。</div>
@@ -1327,7 +1594,7 @@ if __name__ == '__main__':
 <footer>
   <div class="wrap">
     RAG 学习实验室 · 由教程文档整理生成 · 演示数据为教学模拟，真实分数由 BGE-M3 / bge-reranker-large 计算
-    <div class="note">学完这页，你已经能回答：书是怎么进图书馆的（读切存），考试时是怎么翻书的（检）。下一站：让大模型照着翻到的书作答。</div>
+    <div class="note">学完这页，你已经能独立讲清 RAG 全链路：书怎么进图书馆（读切存）、怎么翻书（检）、怎么照书作答（答）、常见问题怎么走快速通道（缓）。</div>
   </div>
 </footer>
 
@@ -1381,7 +1648,7 @@ document.querySelectorAll('.codebox').forEach(box=>{
 });
 
 /* ================= 导航 scrollspy ================= */
-const secIds=['ch-read','ch-split','ch-store','ch-search','ch-code'];
+const secIds=['ch-read','ch-split','ch-store','ch-search','ch-answer','ch-cache','ch-code'];
 const navLinks={}; document.querySelectorAll('#nav a').forEach(a=>{
   navLinks[a.getAttribute('href').slice(1)]=a;
 });
@@ -1743,5 +2010,175 @@ D4_QS.forEach(q=>{
 });
 d4Go();
 </script>
+<script>
+/* ================= Demo5 分诊台 ================= */
+const D5_EDU=[
+  {q:'AI学科的课程目录是怎样的',a:'AI学科共 6 个阶段：Python 基础 → 机器学习 → 深度学习 → NLP 与大模型 → RAG 实战 → 毕业项目，共 6 个月。',
+   parent:'父块A · AI学科介绍',pt:'AI学科课程共 6 个阶段：Python 基础、机器学习、深度学习、NLP 与大模型、RAG 实战、毕业项目。学费 19800 元，支持分期，上课时间为每周二、四晚直播。'},
+  {q:'AI学科的学费是多少',a:'AI学科全科学费 19800 元，支持 6 期免息分期，报名后 7 天内可全额退款。',
+   parent:'父块A · AI学科介绍',pt:'AI学科课程共 6 个阶段：Python 基础、机器学习、深度学习、DLP 与大模型、RAG 实战、毕业项目。学费 19800 元，支持分期，上课时间为每周二、四晚直播。'},
+  {q:'Java和Python语言的区别是什么',a:'Java 静态类型、擅长大型后端系统；Python 动态类型、是数据和 AI 领域的主流语言。按方向选：做后端选 Java，做 AI/数据选 Python。',
+   parent:'父块B · 编程语言对比',pt:'Java 静态类型、运行在 JVM 上，适合大型后端；Python 动态类型，生态集中在数据分析和 AI。选型看方向：后端工程化选 Java，AI 与数据选 Python。'},
+  {q:'人工智能在教育领域的应用有哪些',a:'根据提供的文档：AI 在教育中的应用包括个性化学习路径、智能答疑、自动批改和学情分析四大方向。',
+   parent:'教育领域应用 · 假设答案命中',pt:'人工智能在教育领域：个性化学习路径、智能答疑、自动批改、学情分析。'},
+  {q:'springboot的原理是什么',a:'SpringBoot 的核心是自动装配：约定优于配置，通过 @Conditional 按需加载 Starter 里的 Bean。',
+   parent:'父块D · Java技术',pt:'SpringBoot 自动装配：约定优于配置，@Conditional 按需加载 Starter 中的 Bean，内嵌容器开箱即用。'}
+];
+const D5_GEN=(q)=>'（通用知识示例回答）这是模型自己的知识范围，不需要翻教材：'+q.replace(/\?|？/g,'')+'。';
+const D5_SYNS={课程:1,目录:1,学费:1,原理:1,区别:1,比较:1,应用:1,教育:1,领域:1,springboot:1,java:1,python:1};
+function d5Classify(q){
+  const lower=q.toLowerCase();
+  if(/(天气|笑话|你好|在吗|电影|做饭)/.test(lower)) return '通用知识';
+  if(Object.keys(D5_SYNS).some(w=>lower.includes(w))) return '专业咨询';
+  return '通用知识';
+}
+function d5Strategy(q){
+  const lower=q.toLowerCase();
+  if(/(区别|比较|对比|优缺点)/.test(lower)) return '子查询检索';
+  if(/(应用有哪些|应用场景|的应用|领域|发展)/.test(lower)) return '假设问题检索';
+  return '直接检索';
+}
+function d5Subqueries(q){
+  if(/Java和Python/.test(q)) return ['Java 语言的优缺点','Python 语言的优缺点','Java 和 Python 的适用场景对比'];
+  const parts=q.split(/和|与|跟/).map(s=>s.replace(/(区别是什么|的区别|比较|对比|优缺点|\?|？)/g,'').trim()).filter(Boolean);
+  return parts.length>1?parts.map(p=>p+' 的优缺点'):['问题太笼统，建议拆成：'+q+'（角度1）',q+'（角度2）'];
+}
+function d5Hyde(q){
+  if(/教育/.test(q)) return 'AI 在教育领域主要用于个性化学习路径规划、智能答疑机器人、自动批改作业和学情数据分析。';
+  return '（假设答案）'+q.replace(/\?|？/g,'')+'。它指的是：'+q.slice(0,10)+'……（大模型会编一段像文档的说法，拿它去匹配向量库）';
+}
+function d5Retrieve(q){
+  const hit=D5_EDU.find(x=>x.q===q||x.parent.includes(q));
+  if(hit) return [hit];
+  const lower=q.toLowerCase();
+  const loose=D5_EDU.filter(x=>Object.keys(D5_SYNS).some(w=>lower.includes(w)&&x.q.toLowerCase().includes(w)));
+  return loose.slice(0,2);
+}
+function d5Run(){
+  const q=$('#d5-input').value.trim(); if(!q) return;
+  const cat=d5Classify(q);
+  let html='<div class="stage-tag done" style="margin-bottom:8px"><i>1</i>BERT 分诊：<b style="color:var(--red-deep)">'+cat+'</b>（小模型，毫秒级）</div>';
+  let context,docs=[];
+  if(cat==='通用知识'){
+    context='通用知识';
+    html+='<div class="r-item" style="border-color:var(--green);background:var(--green-wash)">不查向量库 —— 检索这步直接省掉，省钱闸门生效</div>';
+  }else{
+    const st=d5Strategy(q);
+    html+='<div class="stage-tag done" style="margin-bottom:8px"><i>2</i>检索策略：<b style="color:var(--red-deep)">'+st+'</b>（大模型选的，temperature=0.1）</div>';
+    if(st==='子查询检索'){
+      const subs=d5Subqueries(q);
+      html+='<div class="r-item">子查询拆解 → '+subs.map(esc).join('<span style="color:var(--ink-soft)"> ｜ </span>')+'</div>';
+      docs=d5Retrieve(q); if(!docs.length) docs=[D5_EDU[2]];
+    }else if(st==='假设问题检索'){
+      const hy=d5Hyde(q);
+      html+='<div class="r-item">假设答案（拿它当检索词）→ '+esc(hy)+'</div>';
+      docs=[D5_EDU[3]];
+    }else{
+      docs=d5Retrieve(q); if(!docs.length) docs=[D5_EDU[0]];
+      html+='<div class="r-item">拿原话直接进第④章的混合检索 → 命中 '+docs.length+' 个父块</div>';
+    }
+  }
+  const ctx=docs.map(d=>d.pt).join('\n\n');
+  const promptText='你是一个智能助手，帮助用户回答问题。\n如果提供了上下文，请基于上下文回答；如果没有上下文，请直接根据你的知识回答。\n如果答案来源于检索到的文档，请在回答中说明。\n\n上下文: '+(context||ctx)+'\n问题: '+q+'\n\n如果无法回答，请回复："信息不足，无法回答，请联系人工客服，电话：400-800-1234。"\n回答: ';
+  html+='<div class="stage-tag done" style="margin:8px 0"><i>3</i>拼好的提示词（大模型实际收到的全部内容）：</div>'+
+    '<div class="to-parent" style="white-space:pre-wrap;font-size:13.5px">'+esc(promptText)+'</div>'+
+    '<div class="stage-tag done" style="margin:10px 0 6px"><i>4</i>大模型回答（模拟）：</div>'+
+    '<div class="to-parent" style="border-color:var(--green)">'+esc(cat==='通用知识'?D5_GEN(q):(docs[0]?docs[0].a:'信息不足，无法回答，请联系人工客服，电话：400-800-1234。'))+'</div>';
+  $('#d5-out').innerHTML=html;
+}
+$('#d5-go').addEventListener('click',d5Run);
+$('#d5-input').addEventListener('keydown',e=>{ if(e.key==='Enter') d5Run(); });
+[D5_EDU[0].q, D5_EDU[1].q, '北京今天天气怎么样'].concat(D5_EDU.slice(2,5).map(x=>x.q)).forEach(q=>{
+  const c=document.createElement('button'); c.type='button'; c.className='chip';
+  c.textContent=q; c.addEventListener('click',()=>{ $('#d5-input').value=q; d5Run(); });
+  $('#d5-chips').appendChild(c);
+});
+
+/* ================= Demo6 三级漏斗台 ================= */
+const D6_FAQ=[
+  {q:'关联子查询的执行顺序是什么',t:['关联','子查询','的','执行','顺序','是','什么'],a:'先执行内层子查询，拿到结果后外层查询再基于结果执行。'},
+  {q:'AI学科的学费是多少',t:['AI学科','的','学费','是','多少'],a:'19800 元，支持 6 期免息分期。'},
+  {q:'课程可以退吗',t:['课程','可以','退','吗'],a:'开课 7 天内可全额退款，之后按剩余课时折算。'},
+  {q:'上课时间是怎么安排的',t:['上课','时间','是','怎么','安排','的'],a:'每周二、四晚 8 点直播，周末有回放。'},
+  {q:'RAG 是什么',t:['RAG','是','什么'],a:'检索增强生成：先检索资料再让模型照资料作答。'}
+];
+let d6Redis={'answer:AI学科的学费是多少':'19800 元，支持 6 期免息分期。'};
+function d6Seg(s){
+  const dict=[...new Set(D6_FAQ.flatMap(f=>f.t))].sort((a,b)=>b.length-a.length);
+  const out=[]; let i=0;
+  while(i<s.length){
+    let hit=null;
+    for(const w of dict){ if(s.startsWith(w,i)){hit=w;break;} }
+    if(!hit){ hit=s.slice(i,i+2)||s.slice(i,i+1); }
+    out.push(hit); i+=hit.length;
+  }
+  return out;
+}
+function d6BM25(qTokens,docs){
+  const N=docs.length,k1=1.2,b=0.75;
+  const avgdl=docs.reduce((s,d)=>s+d.t.length,0)/N;
+  const df={}; docs.forEach(d=>{ new Set(d.t).forEach(t=>df[t]=(df[t]||0)+1); });
+  return docs.map(d=>{
+    const tf={}; d.t.forEach(t=>tf[t]=(tf[t]||0)+1);
+    return qTokens.reduce((s,t)=>{
+      const n=df[t]||0, f=tf[t]||0;
+      return s+Math.log(1+(N-n+0.5)/(n+0.5))*f*(k1+1)/(f+k1*(1-b+b*d.t.length/avgdl));
+    },0);
+  });
+}
+function d6Softmax(a){
+  const e=a.map(x=>Math.exp(x-Math.max(...a)));
+  const sum=e.reduce((s,x)=>s+x,0);
+  return e.map(x=>x/sum);
+}
+let d6Last=null;
+function d6Render(){
+  if(!d6Last) return;
+  const {q,redis,scores,thresh}=d6Last;
+  let html='<div class="stage-tag done" style="margin-bottom:8px"><i>1</i>Redis 便利贴墙：';
+  html+=redis?('<b style="color:var(--green)">精确命中，秒回</b> → '+esc(d6Redis['answer:'+q])):'<span style="color:var(--ink-soft)">KEY answer:'+esc(q)+' 不存在，未命中 → 往下走</span>';
+  html+='</div>';
+  html+='<div class="stage-tag done" style="margin-bottom:6px"><i>2</i>BM25 × MySQL FAQ 手册（实时真算，softmax 归一化后）：</div>';
+  html+=scores.map((s,i)=>
+    '<div class="f-item'+(s.score>=thresh?' win':'')+'" style="padding:6px 12px">'+
+    '<span class="fo-score">'+s.score.toFixed(3)+'</span>'+
+    '<div class="fo-body"><b style="font-size:13.5px">'+esc(D6_FAQ[s.idx].q)+'</b>'+
+    '<div class="fo-meta">'+(s.score>=thresh?'≥ 阈值 '+thresh.toFixed(2)+' → 直接返回这条答案':('＜ 阈值 '+thresh.toFixed(2)))+'</div></div></div>'
+  ).join('');
+  if(d6Last.hit){
+    html+='<div class="stage-tag done" style="margin:10px 0 6px"><i>3</i><b style="color:var(--green)">FAQ 命中，RAG 不用跑</b> → '+esc(d6Last.answer)+'</div>';
+    if(!redis) html+='<div class="hint">已写回 Redis：answer:'+esc(q)+'（下次同样的问题秒回）</div>';
+  }else{
+    html+='<div class="stage-tag done" style="margin:10px 0 6px"><i>3</i>两级都没接住 → <b style="color:var(--red-deep)">进入 RAG 全流程</b>（第④章检索 + 第⑤章生成）</div>';
+  }
+  $('#d6-out').innerHTML=html;
+}
+function d6Run(){
+  const q=$('#d6-input').value.trim(); if(!q) return;
+  const thresh=parseFloat($('#d6-slider').value);
+  const redis=!!d6Redis['answer:'+q];
+  const scores=d6BM25(d6Seg(q),D6_FAQ).map((v,i)=>({v,idx:i}));
+  scores.sort((a,b)=>b.v-a.v);
+  const raw=scores.map(x=>x.v);
+  const sm=d6Softmax(raw);
+  const ranked=scores.map((x,i)=>({idx:x.idx,score:sm[i]}));
+  const hit=ranked[0].score>=thresh;
+  let answer=null;
+  if(hit){ answer=D6_FAQ[ranked[0].idx].a; d6Redis['answer:'+q]=answer; }
+  d6Last={q,redis,scores:ranked.slice(0,3),thresh,hit,answer};
+  d6Render();
+}
+$('#d6-go').addEventListener('click',d6Run);
+$('#d6-input').addEventListener('keydown',e=>{ if(e.key==='Enter') d6Run(); });
+$('#d6-slider').addEventListener('input',e=>{ $('#d6-th').textContent=parseFloat(e.target.value).toFixed(2); if(d6Last) d6Run(); });
+$('#d6-reset').addEventListener('click',()=>{ d6Redis={'answer:AI学科的学费是多少':'19800 元，支持 6 期免息分期。'}; d6Last=null; $('#d6-out').innerHTML='<p class="hint">Redis 已重置（只剩预置的学费便利贴）。换个问题试试。</p>'; });
+['AI学科的学费是多少','关联子查询的执行顺序','关联子查询的执行顺序是什么','什么是RAG','向量数据库怎么选'].forEach(q=>{
+  const c=document.createElement('button'); c.type='button'; c.className='chip';
+  c.textContent=q; c.addEventListener('click',()=>{ $('#d6-input').value=q; d6Run(); });
+  $('#d6-chips').appendChild(c);
+});
+d6Run();
+</script>
+
 </body>
 </html>
