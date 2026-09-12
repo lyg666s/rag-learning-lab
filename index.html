@@ -252,6 +252,20 @@ table.info td code{font-family:var(--mono);font-size:12.5px;background:var(--pap
 footer{padding:36px 0 60px;color:var(--ink-soft);font-size:13.5px}
 footer .note{margin-top:8px}
 
+/* ---------- 期末自测 ---------- */
+.quiz-q{border:1.5px solid var(--line);border-radius:10px;background:#fff;padding:13px 16px;margin-top:12px}
+.quiz-t{font-size:14.5px;font-weight:600;line-height:1.75}
+.quiz-t b{font-family:var(--mono);font-size:12px;color:#fff;background:var(--ink);border-radius:4px;padding:1px 7px;margin-right:9px;vertical-align:2px}
+.quiz-opts{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px}
+.quiz-opt{font-family:var(--serif);font-size:13.5px;line-height:1.5;border:1.5px solid var(--line);background:var(--paper-2);border-radius:8px;padding:6px 14px;cursor:pointer}
+.quiz-opt:hover:not(:disabled){border-color:var(--ink)}
+.quiz-opt:disabled{cursor:default;color:var(--ink-soft)}
+.quiz-opt.ok{border-color:var(--green);background:#E9F3EF;color:var(--green);font-weight:600}
+.quiz-opt.no{border-color:var(--red);background:#F8E9E5;color:var(--red-deep);font-weight:600}
+.quiz-opt.ok:disabled,.quiz-opt.no:disabled{color:inherit}
+.quiz-why{display:none;margin-top:11px;font-size:13.5px;color:var(--ink-soft);line-height:1.85;border-top:1px dashed var(--line);padding-top:9px}
+.quiz-q.answered .quiz-why{display:block}
+
 /* ---------- 响应式 ---------- */
 @media (max-width:960px){
   .ch-grid{grid-template-columns:1fr}
@@ -274,7 +288,7 @@ footer .note{margin-top:8px}
   <div class="top-in">
     <div class="brand"><span class="seal seal-s">R</span>RAG 学习实验室</div>
     <nav class="steps" id="nav">
-      <a href="#ch-read"><b>读</b>加载</a><span class="arr">→</span>
+      <a href="#ch-basics"><b>备</b>摸底</a><span class="arr">→</span><a href="#ch-read"><b>读</b>加载</a><span class="arr">→</span>
       <a href="#ch-split"><b>切</b>父子块</a><span class="arr">→</span>
       <a href="#ch-store"><b>存</b>向量化</a><span class="arr">→</span>
       <a href="#ch-search"><b>检</b>混合检索</a><span class="arr">→</span>
@@ -290,10 +304,10 @@ footer .note{margin-top:8px}
 <main class="wrap">
 
 <!-- ============ Hero ============ -->
-<section class="hero">
+<section class="hero" id="hero">
   <h1>大模型的<em>开卷考试</em>，<br>是从一场「翻书」开始的。</h1>
   <p class="lead">大模型的知识停在它「毕业」那天，你的教材、讲义、题库它一页都没读过。RAG（检索增强生成）的做法很像开卷考试：先从资料里翻到最相关的那几页，再照着作答。这门课讲的是「书」怎么准备、「翻书」怎么翻 —— 也就是向量数据库里的<b>存储</b>与<b>检索</b>。</p>
-  <p class="note note-inline">一句话大白话：RAG = 先查资料，再答题。下面的「读 → 切 → 存」是把书搬进图书馆（离线建库），「检」是考试时按问题去书架上翻书（在线问答）。</p>
+  <p class="note note-inline">一句话大白话：RAG = 先查资料，再答题。下面的「读 → 切 → 存」是把书搬进图书馆（离线建库），「检」是考试时按问题去书架上翻书（在线问答）。零基础第一次读？先去 <a href="#ch-basics">第⓪章 · 开学摸底</a> 认全演员表——四种模型、三种数据库、token / 温度 / 幻觉，再回来顺这条主线。</p>
 
   <div class="flow" aria-label="整体流程">
     <div class="flow-row">
@@ -329,6 +343,65 @@ footer .note{margin-top:8px}
   </div>
 </section>
 
+<!-- ============ 第 0 章 备 ============ -->
+<section class="chapter" id="ch-basics">
+  <div class="ch-head">
+    <span class="seal">备</span>
+    <div><h2>开学前摸底</h2><div class="sub">先认全演员：四种模型 · 三种数据库 · 大模型三常识</div></div>
+  </div>
+  <div class="ch-grid">
+    <div class="ch-main prose">
+      <p><span class="term">这一章在干嘛：</span>后面每一章都默认你已经懂一些「课外知识」——模型有哪几种、数据库有哪几种、token 是什么。这一章把它们提前补齐。不用背：读到后面忘了谁是谁，点右侧目录回到这页扫一眼就行，比从头翻全文快得多。</p>
+
+      <h3 class="blk">演员表 · 这个系统里的四种模型</h3>
+      <p>全页读下来你会遇到四种模型，分工和身价完全不同。先认脸，后面出场就不慌：</p>
+      <table class="info">
+        <tr><th>模型</th><th>出场</th><th>干哪份活</th><th>身价</th></tr>
+        <tr><td><b>大模型</b>（生成模型）</td><td>⑤⑦</td><td>读资料、组织答案——系统里唯一「会写文章」的</td><td>最贵最慢，按 token 收费，能省一次是一次</td></tr>
+        <tr><td><b>嵌入模型</b> BGE-M3</td><td>③④</td><td>翻译官：把一句话压成一串数字（向量），意思近的句子数字也排得近</td><td>中等，本地部署随便跑、不花钱</td></tr>
+        <tr><td><b>重排模型</b> bge-reranker-large</td><td>④</td><td>判卷老师：把「问题 + 段落」放一起精读打分</td><td>偏贵，只给少量决赛选手用</td></tr>
+        <tr><td><b>分类模型</b> BERT 小模型</td><td>⑤</td><td>门口护士：毫秒级分清「通用闲聊还是专业咨询」</td><td>极快极便宜，几乎免费</td></tr>
+      </table>
+      <p>一句话记牢：<b>学霸答题（大模型）、翻译官变数字（嵌入）、判卷老师精读（重排）、护士分诊（分类）</b>——从前往后一个比一个小、快、便宜。⑤⑥两章的省钱思路就是这条：能用便宜模型拦住的，绝不劳驾贵的。</p>
+
+      <h3 class="blk">场地 · 三种数据库各管什么</h3>
+      <table class="info">
+        <tr><th>数据库</th><th>出场</th><th>存什么</th><th>大白话</th></tr>
+        <tr><td><b>MySQL</b></td><td>⑥⑦</td><td>FAQ 问答对、每轮会话记录</td><td>账本：正经记账，掉电不丢；但只会「按条件精确对账」</td></tr>
+        <tr><td><b>Redis</b></td><td>⑥</td><td>最高频 FAQ 的缓存</td><td>便签墙：贴在最顺手的地方，来问的人对一眼就秒回；掉电就没了，所以只放热门</td></tr>
+        <tr><td><b>Milvus</b></td><td>③④</td><td>子块正文 + 两种向量</td><td>向量书架：专管「意思相近」的查找——MySQL 的 Ctrl+F 干不了的活</td></tr>
+      </table>
+      <p>新手最常见的疑问：「为什么不全都存 MySQL？」——MySQL 的 LIKE 查询是 Ctrl+F，字面一模一样才查得到：「怎么保养车」永远查不到「汽车维护技巧」。Milvus 吃的是向量，按意思远近找。三种库不是重复建设，是<b>各管一种找法</b>：精确对账（MySQL）、秒回高频（Redis）、意思相近（Milvus）。</p>
+
+      <h3 class="blk">大模型三常识</h3>
+      <p><b>token</b>：模型眼里的「字」。英文一个单词约 1~2 个 token，中文一个汉字约 1~1.5 个。大模型按 token 计费，也按 token 逐个往外吐——所以「逐 token 输出」就是「每写出一小截就立刻推给你」，第⑦章流式输出说的就是它。</p>
+      <p><b>温度（temperature）</b>：发挥程度的旋钮，取值 0~2。越低越死板稳定（同一个问题每次答案几乎一样），越高越发散天马行空。本课在⑤章用了两次：选检索策略时 0.1（要稳，别乱选）、最终作答时 0.5（要自然，别死板）。</p>
+      <p><b>幻觉</b>：模型一本正经地编。它不觉得自己在骗你——它只会「顺着话往下接」，接不出实话时就接一句像模像样的假话。RAG 整套系统存在的意义就是给它递资料：「照着资料答，资料不够就转人工」，从根上压幻觉。</p>
+
+      <div class="verify"><b>怎么用这一章：</b>不用背。读到后面忘了谁是谁——「BERT 和 BGE-M3 谁是分类的来着」「Milvus 和 MySQL 差在哪」——点右侧目录回到这页扫一眼表格。更全的名词解释在 <a href="#glossary">附录 · 术语表</a>。</div>
+    </div>
+
+    <aside class="side">
+      <div class="note">一张嘴记住演员表：<b>学霸答题、翻译官变数字、判卷老师精读、护士分诊</b>——一个比一个小、快、便宜。</div>
+      <div class="note">三种库三种找法：<b>MySQL 精确对账、Redis 秒回高频、Milvus 意思相近</b>。混着用不是浪费，是各干各的。</div>
+      <div class="note">后文再见到 token / 温度 / 幻觉犯迷糊，回这页扫一眼；全页名词的一句话解释都在 <a href="#glossary">附录 · 术语表</a>。</div>
+      <div class="anchor">
+        本页目录
+        <a href="#ch-basics">⓪ 备 · 开学摸底</a>
+        <a href="#ch-read">① 读 · 文档加载</a>
+        <a href="#ch-split">② 切 · 父子块拆分</a>
+        <a href="#ch-store">③ 存 · 向量化入库</a>
+        <a href="#ch-search">④ 检 · 混合检索</a>
+        <a href="#ch-answer">⑤ 答 · 生成与策略</a>
+        <a href="#ch-cache">⑥ 缓 · 缓存加速</a>
+        <a href="#ch-stream">⑦ 流 · 工程上线</a>
+        <a href="#ch-graph">⑧ 图 · LangGraph</a>
+        <a href="#ch-code">全套代码</a>
+        <a href="#appendix">附录 · 自测与速查</a>
+      </div>
+    </aside>
+  </div>
+</section>
 <!-- ============ 第 1 步 读 ============ -->
 <section class="chapter" id="ch-read">
   <div class="ch-head">
@@ -424,6 +497,7 @@ def load_documents_from_directory(directory_path: str) -> [Document]:
       <div class="note">元数据不是装饰。<code>source</code> 是后面检索时「只在某个学科书架里找」的依据；<code>timestamp</code> 用来分辨资料新旧。</div>
       <div class="anchor">
         本页目录
+        <a href="#ch-basics">⓪ 备 · 开学摸底</a>
         <a href="#ch-read">① 读 · 文档加载</a>
         <a href="#ch-split">② 切 · 父子块拆分</a>
         <a href="#ch-store">③ 存 · 向量化入库</a>
@@ -433,7 +507,7 @@ def load_documents_from_directory(directory_path: str) -> [Document]:
         <a href="#ch-stream">⑦ 流 · 工程上线</a>
         <a href="#ch-graph">⑧ 图 · LangGraph</a>
         <a href="#ch-code">全套代码</a>
-        <a href="#appendix">附录 · 参数与快问快答</a>
+        <a href="#appendix">附录 · 自测与速查</a>
       </div>
     </aside>
   </div>
@@ -580,6 +654,7 @@ def _split_parent_then_child(doc, doc_index, parent_splitter, child_splitter):
       <div class="note">为什么小块查得更准？一段话主题越单一，它的语义向量就越「立场鲜明」。一大章什么都讲，向量就被平均成一锅粥，跟哪个问题都有点像、又都不像。</div>
       <div class="anchor">
         本页目录
+        <a href="#ch-basics">⓪ 备 · 开学摸底</a>
         <a href="#ch-read">① 读 · 文档加载</a>
         <a href="#ch-split">② 切 · 父子块拆分</a>
         <a href="#ch-store">③ 存 · 向量化入库</a>
@@ -589,7 +664,7 @@ def _split_parent_then_child(doc, doc_index, parent_splitter, child_splitter):
         <a href="#ch-stream">⑦ 流 · 工程上线</a>
         <a href="#ch-graph">⑧ 图 · LangGraph</a>
         <a href="#ch-code">全套代码</a>
-        <a href="#appendix">附录 · 参数与快问快答</a>
+        <a href="#appendix">附录 · 自测与速查</a>
       </div>
     </aside>
   </div>
@@ -741,6 +816,7 @@ def _split_parent_then_child(doc, doc_index, parent_splitter, child_splitter):
       <div class="note">MD5 主键 + upsert 的组合拳，让「重建知识库」变成可以随便重跑的操作 —— 内容没变就不产生重复数据。</div>
       <div class="anchor">
         本页目录
+        <a href="#ch-basics">⓪ 备 · 开学摸底</a>
         <a href="#ch-read">① 读 · 文档加载</a>
         <a href="#ch-split">② 切 · 父子块拆分</a>
         <a href="#ch-store">③ 存 · 向量化入库</a>
@@ -750,7 +826,7 @@ def _split_parent_then_child(doc, doc_index, parent_splitter, child_splitter):
         <a href="#ch-stream">⑦ 流 · 工程上线</a>
         <a href="#ch-graph">⑧ 图 · LangGraph</a>
         <a href="#ch-code">全套代码</a>
-        <a href="#appendix">附录 · 参数与快问快答</a>
+        <a href="#appendix">附录 · 自测与速查</a>
       </div>
     </aside>
   </div>
@@ -891,6 +967,7 @@ print(model1.predict(pairs))
       <div class="note">命中子块、返回父块 —— 所以第 2 步里子块才要背着 <code>parent_content</code> 一起入库。前面埋的伏笔，在这里兑现。</div>
       <div class="anchor">
         本页目录
+        <a href="#ch-basics">⓪ 备 · 开学摸底</a>
         <a href="#ch-read">① 读 · 文档加载</a>
         <a href="#ch-split">② 切 · 父子块拆分</a>
         <a href="#ch-store">③ 存 · 向量化入库</a>
@@ -900,7 +977,7 @@ print(model1.predict(pairs))
         <a href="#ch-stream">⑦ 流 · 工程上线</a>
         <a href="#ch-graph">⑧ 图 · LangGraph</a>
         <a href="#ch-code">全套代码</a>
-        <a href="#appendix">附录 · 参数与快问快答</a>
+        <a href="#appendix">附录 · 自测与速查</a>
       </div>
     </aside>
   </div>
@@ -954,6 +1031,7 @@ print(model1.predict(pairs))
       <div class="note">提示词里的客服电话是<b>产品思维</b>：AI 承认「信息不足」比硬编一个答案体面得多 —— 兜底话术是模板的一部分，不是临时加的。</div>
       <div class="anchor">
         本页目录
+        <a href="#ch-basics">⓪ 备 · 开学摸底</a>
         <a href="#ch-read">① 读 · 文档加载</a>
         <a href="#ch-split">② 切 · 父子块拆分</a>
         <a href="#ch-store">③ 存 · 向量化入库</a>
@@ -963,7 +1041,7 @@ print(model1.predict(pairs))
         <a href="#ch-stream">⑦ 流 · 工程上线</a>
         <a href="#ch-graph">⑧ 图 · LangGraph</a>
         <a href="#ch-code">全套代码</a>
-        <a href="#appendix">附录 · 参数与快问快答</a>
+        <a href="#appendix">附录 · 自测与速查</a>
       </div>
     </aside>
   </div>
@@ -984,7 +1062,7 @@ print(model1.predict(pairs))
       <p><b>便利贴墙（Redis）</b>：最高频的问题答案直接贴墙上，来一个人对一眼，秒回。<b>FAQ 手册（MySQL + BM25）</b>：墙上的便签不全，但有一本按关键词索引的手册 —— 来的问题跟手册里某条「几乎一样」，翻出来照着念。<b>全院会诊（RAG）</b>：便签墙和手册都解决不了，才走完整流程：查资料库 → 精排 → 让专家现场作答。</p>
 
       <h3 class="blk">BM25 大白话：会打分的关键词匹配</h3>
-      <p>BM25 是「.ctrl+F 搜索的聪明版」：把问题和历史问题都分词，按<b>关键词重合</b>打分，但带三条常识修正 —— ① 查询词在某文档里出现得越多，该文档分越高；② 但一个<b>全库到处都有的词</b>（的、是、什么）几乎不加分类（IDF 折扣）；③ <b>文档越长越吃亏</b>（长文档容易「碰巧」包含关键词，要稀释）。查询和「关联子查询的执行顺序是什么」几乎逐词重合的文档，分数自然鹤立鸡群。</p>
+      <p>BM25 是「Ctrl+F 搜索的聪明版」：把问题和历史问题都分词，按<b>关键词重合</b>打分，但带三条常识修正 —— ① 查询词在某文档里出现得越多，该文档分越高；② 但一个<b>全库到处都有的词</b>（的、是、什么）几乎不加分类（IDF 折扣）；③ <b>文档越长越吃亏</b>（长文档容易「碰巧」包含关键词，要稀释）。查询和「关联子查询的执行顺序是什么」几乎逐词重合的文档，分数自然鹤立鸡群。</p>
       <p>分数还要过一遍 <b>softmax 归一化</b>：把一把参差不齐的分数压成「总和为 1 的百分比」，这才好定 0.9 的阈值 —— 意思是「最高票的文档要有九成把握才算命中」。定这么高是产品决策：<b>FAQ 答错比答不出来更伤人</b>，宁可放去走 RAG，也不把相近问题的答案张冠李戴。</p>
 
       <h3 class="blk">实验台 · 三级漏斗台</h3>
@@ -1016,6 +1094,7 @@ print(model1.predict(pairs))
       <div class="note">第一次没命中而走 RAG 的问题，之后可以人工筛出来补进 FAQ —— <b>系统越用越快</b>，这是缓存层最值钱的地方。</div>
       <div class="anchor">
         本页目录
+        <a href="#ch-basics">⓪ 备 · 开学摸底</a>
         <a href="#ch-read">① 读 · 文档加载</a>
         <a href="#ch-split">② 切 · 父子块拆分</a>
         <a href="#ch-store">③ 存 · 向量化入库</a>
@@ -1025,7 +1104,7 @@ print(model1.predict(pairs))
         <a href="#ch-stream">⑦ 流 · 工程上线</a>
         <a href="#ch-graph">⑧ 图 · LangGraph</a>
         <a href="#ch-code">全套代码</a>
-        <a href="#appendix">附录 · 参数与快问快答</a>
+        <a href="#appendix">附录 · 自测与速查</a>
       </div>
     </aside>
   </div>
@@ -1112,6 +1191,7 @@ def query(self, query, source_filter=None, session_id=None):
         self.mysql_client.update_session_history(session_id, query, collected)
         yield "", True</code></pre>
       </div>
+      <p style="font-size:13.5px;color:var(--ink-soft);margin-top:10px">看不懂 <code>yield</code>？它是「交一件、停一下」的语法——流式输出的根基，<a href="#pycheatsheet">附录 · Python 语法小抄</a> 有专门一节带例子。</p>
       <details class="codebox">
         <div class="cb-head"><span class="cb-file">app.py + ragas_evaluate.py</span>WebSocket 逐帧推送 + RAGAS 评估脚本（点击展开）</div>
         <pre><code class="lang-py"># app.py —— WebSocket 流式接口（节选）
@@ -1152,6 +1232,7 @@ pd.DataFrame([result]).to_csv("ragas_results.csv", index=False)</code></pre>
       <div class="note">RAGAS 四考官两两配对：<b>前两个考检索（准不准、全不全），后两个考生成（编没编、切不切题）</b>。召回率必须有人工标准答案，其他三个可以全自动。</div>
       <div class="anchor">
         本页目录
+        <a href="#ch-basics">⓪ 备 · 开学摸底</a>
         <a href="#ch-read">① 读 · 文档加载</a>
         <a href="#ch-split">② 切 · 父子块拆分</a>
         <a href="#ch-store">③ 存 · 向量化入库</a>
@@ -1160,10 +1241,8 @@ pd.DataFrame([result]).to_csv("ragas_results.csv", index=False)</code></pre>
         <a href="#ch-cache">⑥ 缓 · 缓存加速</a>
         <a href="#ch-stream">⑦ 流 · 工程上线</a>
         <a href="#ch-graph">⑧ 图 · LangGraph</a>
-        <a href="#ch-stream">⑦ 流 · 工程上线</a>
-        <a href="#ch-graph">⑧ 图 · LangGraph</a>
         <a href="#ch-code">全套代码</a>
-        <a href="#appendix">附录 · 参数与快问快答</a>
+        <a href="#appendix">附录 · 自测与速查</a>
       </div>
     </aside>
   </div>
@@ -1188,7 +1267,7 @@ pd.DataFrame([result]).to_csv("ragas_results.csv", index=False)</code></pre>
       <p><b>Chain 什么时候不够用？</b>大白话：链是<b>流水线传送带</b>，图是<b>地铁线路图</b> —— 地铁能环线（循环）、能换乘（分支）、能多线同发（并行）、能临时停车（人工介入）。比如烧水：水没开就回去接着烧 —— 传送带掉不了头，地铁图随便绕。</p>
 
       <h3 class="blk">三件套：State / Node / Edge</h3>
-      <p><b>State 状态</b>：所有节点共享的一块<b>黑板</b>（TypedDict 类），节点往黑板上写字，下一个节点接着读。<b>Node 节点</b>：一个函数，State 进、State 出。<b>Edge 边</b>：普通边 = 固定下一站；<b>条件边</b> = 一个函数看黑板上的状态返回路由标识，查路由表决定下一站。</p>
+      <p><b>State 状态</b>：所有节点共享的一块<b>黑板</b>（TypedDict 类——Python 的「字典模板」，规定黑板上只能有哪几个字段、各是什么类型，字段名写错编辑器直接红线提醒），节点往黑板上写字，下一个节点接着读。<b>Node 节点</b>：一个函数，State 进、State 出。<b>Edge 边</b>：普通边 = 固定下一站；<b>条件边</b> = 一个函数看黑板上的状态返回路由标识，查路由表决定下一站。</p>
       <div class="codebox">
         <div class="cb-head"><span class="cb-file">入门计算图</span>x=x+y → x=x*y 的最小完整图<button class="cb-copy" type="button">复制</button></div>
         <pre><code class="lang-py">from typing import TypedDict
@@ -1220,7 +1299,7 @@ graph.invoke({"x": 1, "y": 2})   # → {'x': 6, 'y': 2}</code></pre>
       </div>
 
       <h3 class="blk">五种流程控制，全在「冲一杯咖啡」里</h3>
-      <p><b>分支</b>（条件边选路）：水温到 100 走「冲咖啡」，没到走「继续加热」。<b>循环</b>（条件边指回自己）：LangGraph 里没有 while —— 循环 = 「水没开 → 烧水节点自己」这条边，每次 +10 度直到 100。<b>并行</b>（START 同时连多个节点）：烧水和磨咖啡豆互不干扰同时干；都写同一个字段会打架，冲突字段要配合并规则 <code>Annotated[int, rule]</code>。<b>人工介入</b>（interrupt）：「先生要加糖吗？」—— 节点里调 <code>interrupt()</code> 整个图<b>暂停</b>，人通过 <code>Command(resume="是")</code> 喂回决策再继续；图必须带记忆，否则恢复不了。<b>子图</b>：烧水、加糖各自封装成小图再挂进总图，像函数封装一样治复杂性。</p>
+      <p><b>分支</b>（条件边选路）：水温到 100 走「冲咖啡」，没到走「继续加热」。<b>循环</b>（条件边指回自己）：LangGraph 里没有 while —— 循环 = 「水没开 → 烧水节点自己」这条边，每次 +10 度直到 100。<b>并行</b>（START 同时连多个节点）：烧水和磨咖啡豆互不干扰同时干；都写同一个字段会打架，冲突字段要配合并规则 <code>Annotated[int, rule]</code>——读作「这个字段是 int，但并行多人同时写它时，按 rule 定的规矩合并（比如各加各的）」。<b>人工介入</b>（interrupt）：「先生要加糖吗？」—— 节点里调 <code>interrupt()</code> 整个图<b>暂停</b>，人通过 <code>Command(resume="是")</code> 喂回决策再继续；图必须带记忆，否则恢复不了。<b>子图</b>：烧水、加糖各自封装成小图再挂进总图，像函数封装一样治复杂性。</p>
       <div class="codebox">
         <div class="cb-head"><span class="cb-file">咖啡图节选</span>条件边循环 + 人工介入两个关键片段<button class="cb-copy" type="button">复制</button></div>
         <pre><code class="lang-py"># 循环：条件边指回自己 —— 烧水直到 100 度
@@ -1297,6 +1376,7 @@ graph.invoke(Command(resume=decision), config) # 喂回决策，继续跑</code>
       <div class="note">人工介入三件套缺一不可：<b>interrupt() 节点 + Command(resume) 喂决策 + checkpointer 记忆</b>。少一个，暂停了就醒不来。</div>
       <div class="anchor">
         本页目录
+        <a href="#ch-basics">⓪ 备 · 开学摸底</a>
         <a href="#ch-read">① 读 · 文档加载</a>
         <a href="#ch-split">② 切 · 父子块拆分</a>
         <a href="#ch-store">③ 存 · 向量化入库</a>
@@ -1305,10 +1385,8 @@ graph.invoke(Command(resume=decision), config) # 喂回决策，继续跑</code>
         <a href="#ch-cache">⑥ 缓 · 缓存加速</a>
         <a href="#ch-stream">⑦ 流 · 工程上线</a>
         <a href="#ch-graph">⑧ 图 · LangGraph</a>
-        <a href="#ch-stream">⑦ 流 · 工程上线</a>
-        <a href="#ch-graph">⑧ 图 · LangGraph</a>
         <a href="#ch-code">全套代码</a>
-        <a href="#appendix">附录 · 参数与快问快答</a>
+        <a href="#appendix">附录 · 自测与速查</a>
       </div>
     </aside>
   </div>
@@ -1872,11 +1950,22 @@ async def health_check():
 <section class="chapter" id="appendix" style="border-bottom:none">
   <div class="ch-head">
     <span class="seal" style="background:var(--ink);box-shadow:2px 2px 0 rgba(35,38,44,.2)">附</span>
-    <div><h2>参数表与快问快答</h2><div class="sub">跑起来之前，把旋钮都认一遍</div></div>
+    <div><h2>期末自测与速查手册</h2><div class="sub">自测 12 题 · 参数旋钮 · 术语表 · Python 语法小抄 · 快问快答</div></div>
   </div>
   <div class="ch-grid" style="grid-template-columns:1fr">
     <div class="ch-main">
-      <h3 class="blk" style="margin-top:6px">配置参数（base/config.py）</h3>
+            <h3 class="blk" style="margin-top:6px" id="quiz">期末自测 · 12 题</h3>
+      <div class="lab">
+        <div class="lab-head"><span class="lamp"></span><b>全部章节读完了吗？12 题见真章</b><span>选完立刻判分 + 一句话讲解；答错不要紧，讲解本身就是复习</span></div>
+        <div class="lab-body">
+          <div class="btn-row">
+            <span class="stage-tag" id="quiz-score">已答 0 / 12 · 答对 0</span>
+            <button class="btn" id="quiz-redo" type="button">重新开始</button>
+          </div>
+          <div id="quiz-box"></div>
+        </div>
+      </div>
+<h3 class="blk" style="margin-top:6px">配置参数（base/config.py）</h3>
       <table class="info">
         <tr><th>参数</th><th>作用</th><th>大白话</th></tr>
         <tr><td><code>PARENT_CHUNK_SIZE</code></td><td>父块最大长度</td><td>「章」切多大 —— 给大模型看的上下文量</td></tr>
@@ -1887,7 +1976,80 @@ async def health_check():
         <tr><td><code>MILVUS_HOST / PORT / DATABASE_NAME / COLLECTION_NAME</code></td><td>连接信息</td><td>图书馆的地址、楼层和书架名</td></tr>
       </table>
 
-      <h3 class="blk">快问快答</h3>
+            <h3 class="blk" id="glossary">术语表 · 全页名词一句话</h3>
+      <p>读到哪忘了哪个词，回来查这张表（「详见」可跳到讲它的章节，表按章节顺序排）：</p>
+      <table class="info">
+        <tr><th style="width:5.5em">类别</th><th style="width:16em">术语</th><th>一句话大白话</th><th style="width:5em">详见</th></tr>
+        <tr><td>通用</td><td>RAG 检索增强生成</td><td>大模型没读过你的教材——先翻资料、再照着答（开卷考试）</td><td><a href="#hero">开篇</a></td></tr>
+        <tr><td>通用</td><td>token</td><td>模型眼里的「字」：既是计费单位，也是输出的最小单位</td><td><a href="#ch-basics">⓪</a></td></tr>
+        <tr><td>通用</td><td>温度 temperature</td><td>发挥旋钮：低温稳定死板，高温发散天马行空</td><td><a href="#ch-basics">⓪</a></td></tr>
+        <tr><td>通用</td><td>幻觉</td><td>一本正经地编——RAG 递资料就是为了压它</td><td><a href="#ch-basics">⓪</a></td></tr>
+        <tr><td>① 读</td><td>Loader 加载器</td><td>按扩展名挑的「翻译员」，把各种文件读成统一文本</td><td><a href="#ch-read">①</a></td></tr>
+        <tr><td>① 读</td><td>Document / metadata</td><td>馆藏卡片：正文一份 + 标签若干</td><td><a href="#ch-read">①</a></td></tr>
+        <tr><td>① 读</td><td>OCR</td><td>看图识字：替没有文字层的扫描件「念字」</td><td><a href="#ch-read">①</a></td></tr>
+        <tr><td>① 读</td><td>VLM 多模态模型</td><td>会看图的模型：给图片写「解说词」再钉回原文</td><td><a href="#ch-read">①</a></td></tr>
+        <tr><td>② 切</td><td>父块 / 子块</td><td>小块管被搜到（准），大块管被读懂（全）</td><td><a href="#ch-split">②</a></td></tr>
+        <tr><td>② 切</td><td>CHUNK_OVERLAP</td><td>相邻块的刀口重合，防句子被拦腰切断</td><td><a href="#ch-split">②</a></td></tr>
+        <tr><td>③ 存</td><td>嵌入 / 向量 embedding</td><td>把意思压成一串数字：意思近的句子，数字也排得近</td><td><a href="#ch-store">③</a></td></tr>
+        <tr><td>③ 存</td><td>稠密向量</td><td>1024 个小数的「印象指纹」，认意思不认字面</td><td><a href="#ch-store">③</a></td></tr>
+        <tr><td>③ 存</td><td>稀疏向量</td><td>词 → 权重的「条形码」，认字面不认意思</td><td><a href="#ch-store">③</a></td></tr>
+        <tr><td>③ 存</td><td>分词</td><td>把句子切成词（jieba 等），稀疏向量的前置工序</td><td><a href="#ch-store">③</a></td></tr>
+        <tr><td>③ 存</td><td>Milvus</td><td>向量数据库——本课图书馆的书架</td><td><a href="#ch-store">③</a></td></tr>
+        <tr><td>③ 存</td><td>MD5 主键 / upsert</td><td>内容指纹当 id：重复入库只覆盖，不产生重复</td><td><a href="#ch-store">③</a></td></tr>
+        <tr><td>③ 存</td><td>IVF_FLAT</td><td>向量先聚成 128 个「书架」，查询只翻最像的几架</td><td><a href="#ch-store">③</a></td></tr>
+        <tr><td>③ 存</td><td>倒排索引</td><td>词条 → 含它的那些行：书本最后的索引页</td><td><a href="#ch-store">③</a></td></tr>
+        <tr><td>④ 检</td><td>召回 k（RETRIEVAL_K）</td><td>每路初筛放进来几条——漏斗的口</td><td><a href="#ch-search">④</a></td></tr>
+        <tr><td>④ 检</td><td>WeightedRanker</td><td>两路分数加权相加；数字顺序跟 reqs 一一对应</td><td><a href="#ch-search">④</a></td></tr>
+        <tr><td>④ 检</td><td>reranker / CrossEncoder</td><td>判卷老师：把「问题 + 段落」成对精读打分</td><td><a href="#ch-search">④</a></td></tr>
+        <tr><td>④ 检</td><td>Top-M（CANDIDATE_M）</td><td>精排后留给大模型的资料段数（本课取 3）</td><td><a href="#ch-search">④</a></td></tr>
+        <tr><td>⑤ 答</td><td>BERT 分诊</td><td>门口护士：小模型毫秒级分清「通用还是专业」</td><td><a href="#ch-answer">⑤</a></td></tr>
+        <tr><td>⑤ 答</td><td>HyDE</td><td>先让模型猜个「假设答案」拿去查——答案和文档同文体</td><td><a href="#ch-answer">⑤</a></td></tr>
+        <tr><td>⑤ 答</td><td>提示词 / 槽位</td><td>填空题模板：context / question / history / phone</td><td><a href="#ch-answer">⑤</a></td></tr>
+        <tr><td>⑥ 缓</td><td>Redis</td><td>内存便签墙：只管「一模一样」，秒回</td><td><a href="#ch-cache">⑥</a></td></tr>
+        <tr><td>⑥ 缓</td><td>BM25</td><td>会打分的关键词匹配（Ctrl+F 聪明版），管「几乎一样」</td><td><a href="#ch-cache">⑥</a></td></tr>
+        <tr><td>⑥ 缓</td><td>softmax</td><td>把一把分数压成总和为 1 的百分比，好定 0.9 这类阈值</td><td><a href="#ch-cache">⑥</a></td></tr>
+        <tr><td>⑦ 流</td><td>流式输出</td><td>边生成边往外推——伺候用户耐心，不提速</td><td><a href="#ch-stream">⑦</a></td></tr>
+        <tr><td>⑦ 流</td><td>yield / 生成器</td><td>函数「交一件、停一下」——流式输出的语法根基</td><td><a href="#pycheatsheet">附录</a></td></tr>
+        <tr><td>⑦ 流</td><td>会话记忆 / {history}</td><td>前几轮问答拼进提示词，让「它」有指代</td><td><a href="#ch-stream">⑦</a></td></tr>
+        <tr><td>⑦ 流</td><td>WebSocket / 帧协议</td><td>浏览器和服务器不挂断的通道：start → token → end</td><td><a href="#ch-stream">⑦</a></td></tr>
+        <tr><td>⑦ 流</td><td>RAGAS</td><td>大模型当考官的评估工具，四个指标全是「数比例」</td><td><a href="#ch-stream">⑦</a></td></tr>
+        <tr><td>⑦ 流</td><td>ground_truth</td><td>人工标注的标准答案——四指标里唯一要人干的活</td><td><a href="#ch-stream">⑦</a></td></tr>
+        <tr><td>⑧ 图</td><td>Chain / Graph</td><td>传送带（一条道走到黑）/ 地铁图（能环线、换乘、并行）</td><td><a href="#ch-graph">⑧</a></td></tr>
+        <tr><td>⑧ 图</td><td>State / Node / Edge</td><td>共享黑板 / 一个函数 / 走向</td><td><a href="#ch-graph">⑧</a></td></tr>
+        <tr><td>⑧ 图</td><td>条件边</td><td>看黑板、查路由表，决定下一站去哪</td><td><a href="#ch-graph">⑧</a></td></tr>
+        <tr><td>⑧ 图</td><td>interrupt / Command(resume)</td><td>图暂停问人 / 人喂回决策再继续</td><td><a href="#ch-graph">⑧</a></td></tr>
+        <tr><td>⑧ 图</td><td>checkpointer</td><td>图的记忆：中断恢复必备，三缺一醒不来</td><td><a href="#ch-graph">⑧</a></td></tr>
+      </table>
+
+      <h3 class="blk" id="pycheatsheet">Python 语法小抄 · 读这份代码够用</h3>
+      <p>全页代码反复出现的语法就这 10 个。读代码卡住时，多半卡的是语法而不是逻辑——对着这张表再回头看：</p>
+      <table class="info">
+        <tr><th style="width:17em">语法</th><th>大白话</th><th style="width:12em">本页出处</th></tr>
+        <tr><td><code>def f(x):</code> … <code>return</code></td><td>定义函数：给一段活起个名字；<code>return</code> 是交货</td><td>所有代码框</td></tr>
+        <tr><td><code>class X:</code> / <code>self</code></td><td>类 = 一套自带说明书的工具；<code>self</code> = 这套工具自己</td><td>③ <code>VectorStore</code></td></tr>
+        <tr><td><code>f"…{变量}…"</code></td><td>f-string：字符串里直接嵌变量</td><td>② <code>f"doc_{i}_parent_{j}"</code></td></tr>
+        <tr><td><code>[x for x in 列表]</code></td><td>列表推导式：一行 for 循环攒出一个列表</td><td>③ <code>texts = [doc.page_content …]</code></td></tr>
+        <tr><td><code>for i, x in enumerate(列表)</code></td><td>遍历时顺便拿序号（从 0 数起）</td><td>② <code>for j, parent_doc in …</code></td></tr>
+        <tr><td><code>zip(a, b)</code></td><td>两条队列并排走，一对一配对</td><td>③ <code>zip(row.indices, row.data)</code></td></tr>
+        <tr><td><code>{键: 值}</code></td><td>字典：按名字取东西的柜子</td><td>① metadata、③ sparse_vector</td></tr>
+        <tr><td><code>-&gt; [Document]</code></td><td>类型注解：告诉读代码的人「返回什么」，不参与运行</td><td>各函数签名</td></tr>
+        <tr><td><code>async def</code> / <code>await</code></td><td>异步：等网络 / 磁盘时不干耗着，先去接下一个活</td><td>⑦ app.py</td></tr>
+        <tr><td><code>yield</code></td><td>生成器：交一件、停一下（下面单独讲）</td><td>⑦ 流式输出</td></tr>
+      </table>
+      <p>前 9 个都是「查表」级语法，唯独 <code>yield</code> 值得单独讲——它是第⑦章流式输出的根基。<b>普通函数</b>是「做完所有事、再一次性交货」；<b>带 yield 的函数</b>是「交一件、停一下，你拿走了我再做下一件」：</p>
+      <div class="codebox">
+        <div class="cb-head"><span class="cb-file">yield 生成器</span>交一件，停一下<button class="cb-copy" type="button">复制</button></div>
+        <pre><code class="lang-py">def 倒茶():
+    yield "第一杯"
+    yield "第二杯"        # 函数体没变，但每次只交一杯
+
+for 杯 in 倒茶():        # for 会一次一次来讨
+    print(杯)           # 先拿到第一杯 → 再拿到第二杯
+
+# 第⑦章同理：模型每生成几个字，yield 就交出去几个字，
+# 前端立刻显示——不用等整篇写完，这就是流式输出。</code></pre>
+      </div>
+<h3 class="blk">快问快答</h3>
       <div class="faq">
         <details>
           <summary>为什么用子块查询，却把父块送给大模型？</summary>
@@ -1939,6 +2101,18 @@ async def health_check():
           <summary>LangGraph 里没有 while 循环，那循环怎么写？</summary>
           <div class="faq-a">循环 = 「条件边指回自己」：条件函数看状态返回「水没开」，路由表把「水没开」映射回烧水节点自己 —— 图里有环，执行就会转圈，直到条件放行。这也是它和 Chain 最本质的区别：Chain 的图无环，想回头都不行。</div>
         </details>
+        <details>
+          <summary>为什么不把所有文档直接塞给大模型，还要搞这么一套？</summary>
+          <div class="faq-a">三个理由，个个都硬：① 付不起——每次问答都要把全部教材重传一遍，按 token 计费，教材越多越烧钱；② 太慢——用户要的是 2 秒不是 2 分钟；③ 反而更不准——资料全堆进去，模型会「迷失在中间」（lost in the middle），中间那段经常被无视。RAG 的做法是每次只翻最相关的几页：便宜、快、还更准。</div>
+        </details>
+        <details>
+          <summary>为什么不用 MySQL 的 LIKE 直接查关键词，要专门搞向量库？</summary>
+          <div class="faq-a">LIKE 是 Ctrl+F：字面一模一样才查得到，「怎么保养车」永远查不到「汽车维护技巧」。Milvus 吃向量、按意思找。而且本系统其实两头都用了：稀疏向量 / BM25 管字面，稠密向量管语义——「混合检索」就是承认各有盲区、两路互补。</div>
+        </details>
+        <details>
+          <summary>token 和温度到底是什么？老是记不住。</summary>
+          <div class="faq-a">token 是模型眼里的「字」——计费单位、也是输出的最小单位，所以「逐 token」就是「每写出一小截就推给你」；温度是发挥旋钮——低温稳定、高温发散。专门讲过一遍：<a href="#ch-basics">第⓪章 · 大模型三常识</a>，忘了就回去扫一眼。</div>
+        </details>
       </div>
 
       <div class="verify" style="margin-top:26px"><b>整条链路的自检顺序：</b>① <code>print(len(documents))</code> 有货 → ② <code>print(len(chunks))</code> 且子块带 parent_id → ③ Milvus 行数对得上且重复入库不重复计数 → ④ 相关问题能召回正确父块、无关问题分数明显偏低。四关都过，存储与检索就算验收，可以进入「生成」环节。</div>
@@ -1950,7 +2124,7 @@ async def health_check():
 <footer>
   <div class="wrap">
     RAG 学习实验室 · 由教程文档整理生成 · 演示数据为教学模拟，真实分数由 BGE-M3 / bge-reranker-large 计算
-    <div class="note">学完这页，你已经能独立讲清 RAG 全链路：书怎么进图书馆（读切存）、怎么翻书（检）、怎么照书作答（答）、常见问题怎么走快速通道（缓）。</div>
+    <div class="note">学完这页，你已经能独立讲清 RAG 全链路：书怎么进图书馆（读切存）、怎么翻书（检）、怎么照书作答（答）、常见问题怎么走快速通道（缓）、回答怎么一个字一个字上线（流）、流水线怎么升级成图（图）。</div>
   </div>
 </footer>
 
@@ -2004,7 +2178,7 @@ document.querySelectorAll('.codebox').forEach(box=>{
 });
 
 /* ================= 导航 scrollspy ================= */
-const secIds=['ch-read','ch-split','ch-store','ch-search','ch-answer','ch-cache','ch-stream','ch-graph','ch-code'];
+const secIds=['ch-basics','ch-read','ch-split','ch-store','ch-search','ch-answer','ch-cache','ch-stream','ch-graph','ch-code'];
 const navLinks={}; document.querySelectorAll('#nav a').forEach(a=>{
   navLinks[a.getAttribute('href').slice(1)]=a;
 });
@@ -2725,6 +2899,60 @@ $('#d8-reset').addEventListener('click',()=>{
 });
 d8Init(); d8Render();
 d8Log('LangGraph 咖啡图就绪 —— 点「单步」看 State 怎么在节点间流动','#8B9098');
+
+/* ================= 期末自测 ================= */
+const QUIZ=[
+ {q:'① 扫描版 PDF（图片型）读出来是空的，怎么办？',opts:['加大切块尺寸','走 OCR / VLM「看图识字」，先变文字再进管线','直接放弃这个文件'],a:1,why:'扫描件没有文字层，普通加载器读不到字——先 OCR（或 VLM 看图说话）转成文字，再交给后面的管线。'},
+ {q:'② 切块之后，拿去转成向量、参与检索比对的是谁？',opts:['父块','整份文档','子块'],a:2,why:'子块小而聚焦、向量「立场鲜明」，搜得准；父块不转向量，全文搭在子块行李里，命中后才被领走当上下文。'},
+ {q:'② 检索命中子块之后，最终送给大模型当资料的是？',opts:['整份 PDF','去重 + 精排后的 Top-M 个父块','命中的子块原文'],a:1,why:'「用小的找，用大的答」：命中子块 → 按父块去重 → reranker 精排 → Top-M 个父块拼进提示词。'},
+ {q:'③ 稠密向量靠什么找到资料？',opts:['意思相近','关键词重合','出现频率'],a:0,why:'稠密向量是「印象指纹」：「如何保养车辆」能查到「汽车维护技巧」——一个词都不重合也能中，认意思不认字面。'},
+ {q:'③④ 稀疏向量最怕哪种情况？',opts:['专业术语太生僻','文档太长','用户换个说法问同一件事'],a:2,why:'稀疏向量认字不认义：「保养」说成「维护」就查空——所以要和稠密两路互补。'},
+ {q:'④ WeightedRanker(0.7, 1.0) 里的 0.7 给谁？',opts:['稀疏通道','稠密通道','随机数'],a:0,why:'两个数跟 reqs=[稀疏, 稠密] 的顺序一一对应——0.7 稀疏、1.0 稠密，写反了效果全变。'},
+ {q:'④ reranker 比向量检索准在哪？',opts:['模型参数更大','多查了一遍','把「问题 + 段落」放一起成对精读'],a:2,why:'向量检索是「各算各的再比」；CrossEncoder 成对精读，直接判断这段能不能答这个问题——准但慢，只给决赛选手用。'},
+ {q:'⑤ 分诊为什么用小 BERT 不用大模型？',opts:['高频简单判断用小模型，毫秒级几乎免费','BERT 比 GPT 更新','大模型不会做分类'],a:0,why:'分诊是便宜闸门：能力匹配就好，杀鸡不用牛刀——这是⑤⑥两章共同的省钱思路。'},
+ {q:'⑥ 三级缓存里，管「几乎一样」的是哪层？',opts:['Redis','BM25 + MySQL','RAG 全流程'],a:1,why:'Redis 管「一模一样」，BM25 + MySQL 管「几乎一样」（分数 ≥ 0.9），都不中才走 RAG——一层比一层贵。'},
+ {q:'⑦ 「它学费多少」能听懂「它」指谁，靠什么？',opts:['大模型自己猜的','稀疏向量匹配','会话记忆：前几轮拼进 {history} 槽'],a:2,why:'每轮问答存进会话表，下轮取最近 5 条拼进提示词的 {history} 槽——「它」就有指代可查。'},
+ {q:'⑦ 流式输出为什么体验好？',opts:['总耗时缩短了','第一秒就有字蹦出来，体感等待短','答案更准了'],a:1,why:'总时长没变，变的是「第一个字多快出现」——伺候的是用户的耐心，跟⑥章缓存一个目标。'},
+ {q:'⑧ LangGraph 里没有 while，循环怎么写？',opts:['节点里写 for 循环','图不支持循环','条件边指回自己'],a:2,why:'「水没开 → 烧水节点自己」这条边就是循环：条件函数看状态放行，图里有环就会转圈。'}
+];
+const quizState={done:0,right:0};
+function quizRender(){
+  quizState.done=0; quizState.right=0;
+  $('#quiz-score').textContent='已答 0 / '+QUIZ.length+' · 答对 0';
+  let html='';
+  QUIZ.forEach((it,i)=>{
+    html+='<div class="quiz-q"><div class="quiz-t"><b>'+(i+1)+'</b>'+esc(it.q)+'</div><div class="quiz-opts">';
+    it.opts.forEach((o,j)=>{html+='<button type="button" class="quiz-opt" data-i="'+i+'" data-j="'+j+'">'+esc(o)+'</button>';});
+    html+='</div><div class="quiz-why"></div></div>';
+  });
+  $('#quiz-box').innerHTML=html;
+}
+$('#quiz-box').addEventListener('click',e=>{
+  const btn=e.target.closest('.quiz-opt'); if(!btn) return;
+  const box=btn.closest('.quiz-q');
+  if(box.classList.contains('answered')) return;
+  const i=+btn.dataset.i, j=+btn.dataset.j, it=QUIZ[i];
+  box.classList.add('answered');
+  box.querySelectorAll('.quiz-opt').forEach((b,k)=>{
+    b.disabled=true;
+    if(k===it.a) b.classList.add('ok');
+    else if(k===j) b.classList.add('no');
+  });
+  const right=(j===it.a);
+  quizState.done++; if(right) quizState.right++;
+  box.querySelector('.quiz-why').innerHTML=(right
+    ?'<b style="color:var(--green)">答对了 ✓</b> '
+    :'<b style="color:var(--red-deep)">差一点 ✗</b> ')+esc(it.why);
+  if(quizState.done===QUIZ.length){
+    const r=quizState.right;
+    const msg=r>=10?'优秀，全链路拿捏了':(r>=7?'不错——错题的讲解就是复习重点':'建议按错题回读对应章节');
+    $('#quiz-score').innerHTML='<b>'+msg+'</b>（'+r+' / '+QUIZ.length+'）';
+  }else{
+    $('#quiz-score').textContent='已答 '+quizState.done+' / '+QUIZ.length+' · 答对 '+quizState.right;
+  }
+});
+$('#quiz-redo').addEventListener('click',quizRender);
+quizRender();
 </script>
 
 </body>
